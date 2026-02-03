@@ -82,11 +82,11 @@ const useAuth = () => {
     setEmailSent(false);
   };
 
-  return { currentUser, loading, emailSent, sendSignInLink, completeEmailSignIn, signInWithGoogle, logout };
+  return { currentUser, loading, emailSent, setEmailSent, sendSignInLink, completeEmailSignIn, signInWithGoogle, logout };
 };
 
 export default function App() {
-  const { currentUser, loading, emailSent, sendSignInLink, completeEmailSignIn, signInWithGoogle, logout } = useAuth();
+  const { currentUser, loading, emailSent, setEmailSent, sendSignInLink, completeEmailSignIn, signInWithGoogle, logout } = useAuth();
   const [email, setEmail] = useState('');
   const [activeTab, setActiveTab] = useState('feed');
   const [likedItems, setLikedItems] = useState(new Set());
@@ -407,7 +407,7 @@ export default function App() {
               
               <div className="flex flex-wrap gap-1.5 mb-4">
                 {item.links.map((link, idx) => (
-                  
+                  <a
                     key={idx}
                     href={link.url}
                     target="_blank"
@@ -620,4 +620,13 @@ export default function App() {
                 onClick={handleAddItem}
                 className="w-full bg-gray-900 text-white py-3 rounded-lg font-medium hover:bg-gray-800 transition-colors flex items-center justify-center gap-2"
               >
-                <Send className
+                <Send className="w-4 h-4" />
+                Share
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
