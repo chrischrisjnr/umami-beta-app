@@ -41,7 +41,7 @@ const useAuth = () => {
       id: Date.now(),
       email,
       name,
-      avatar: `https://api.dicebear.com/9.x/open-peeps/svg?seed=${name}&backgroundColor=ffd5dc`,
+      avatar: `https://api.dicebear.com/9.x/open-peeps/svg?seed=${name}&backgroundColor=ffffff`,
       authMethod: 'email'
     };
 
@@ -65,7 +65,7 @@ const useAuth = () => {
         id: Date.now(),
         email,
         name,
-        avatar: `https://api.dicebear.com/9.x/open-peeps/svg?seed=${name}&backgroundColor=c0aede`,
+        avatar: `https://api.dicebear.com/9.x/open-peeps/svg?seed=${name}&backgroundColor=ffffff`,
         authMethod: 'google'
       };
 
@@ -138,25 +138,12 @@ export default function App() {
       content: newItem.content,
       category: newItem.category,
       time: 'Just now',
-      color: getColorForType(newItem.type),
       links: getDefaultLinksForType(newItem.type)
     };
 
     setUserItems([item, ...userItems]);
     setShowAddModal(false);
     setNewItem({ type: 'music', content: '', category: '' });
-  };
-
-  const getColorForType = (type) => {
-    const colors = {
-      music: 'bg-gradient-to-br from-purple-50 to-pink-50',
-      book: 'bg-gradient-to-br from-amber-50 to-yellow-50',
-      tv: 'bg-gradient-to-br from-blue-50 to-cyan-50',
-      podcast: 'bg-gradient-to-br from-green-50 to-emerald-50',
-      theatre: 'bg-gradient-to-br from-rose-50 to-red-50',
-      exhibition: 'bg-gradient-to-br from-indigo-50 to-violet-50'
-    };
-    return colors[type] || 'bg-gray-50';
   };
 
   const getDefaultLinksForType = (type) => {
@@ -213,53 +200,47 @@ export default function App() {
 
   if (!currentUser) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 flex items-center justify-center p-6">
+      <div className="min-h-screen bg-white flex items-center justify-center p-6">
         <div className="max-w-md w-full">
-          <div className="text-center mb-8">
-            <h1 className="text-5xl font-light tracking-wide text-gray-900 mb-2">umami</h1>
-            <p className="text-sm text-gray-600 font-light">social media for taste, not takes</p>
+          <div className="text-center mb-10">
+            <h1 className="text-4xl tracking-wider text-black mb-2 uppercase">umami</h1>
+            <p className="text-xs text-black/50 tracking-wide">taste, not takes</p>
           </div>
 
-          <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-lg p-8 border border-gray-100">
+          <div className="border border-black/10 p-8">
             {!emailSent ? (
               <>
-                <h2 className="text-lg font-medium text-gray-900 mb-6">Sign in to umami</h2>
-                
+                <h2 className="text-sm font-bold text-black mb-6 uppercase tracking-wider">Sign in</h2>
+
                 <button
                   onClick={signInWithGoogle}
                   disabled={loading}
-                  className="w-full bg-white border-2 border-gray-200 text-gray-700 py-3 px-4 rounded-lg font-medium hover:bg-gray-50 transition-colors flex items-center justify-center gap-3 mb-4"
+                  className="w-full border border-black text-black py-3 px-4 text-xs tracking-wider uppercase hover:bg-black hover:text-white transition-colors flex items-center justify-center gap-3 mb-4"
                 >
-                  <svg className="w-5 h-5" viewBox="0 0 24 24">
-                    <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                    <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                    <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-                    <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-                  </svg>
                   Continue with Google
                 </button>
 
                 <div className="relative my-6">
                   <div className="absolute inset-0 flex items-center">
-                    <div className="w-full border-t border-gray-200"></div>
+                    <div className="w-full border-t border-black/10"></div>
                   </div>
-                  <div className="relative flex justify-center text-sm">
-                    <span className="px-4 bg-white/80 text-gray-500">or</span>
+                  <div className="relative flex justify-center text-xs">
+                    <span className="px-4 bg-white text-black/40 uppercase tracking-wider">or</span>
                   </div>
                 </div>
 
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Email address</label>
+                    <label className="block text-xs font-bold text-black mb-2 uppercase tracking-wider">Email</label>
                     <div className="relative">
-                      <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                      <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-black/30" />
                       <input
                         type="email"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         onKeyPress={(e) => e.key === 'Enter' && handleEmailSignIn()}
                         placeholder="you@example.com"
-                        className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent outline-none"
+                        className="w-full pl-10 pr-4 py-3 border border-black/20 text-sm focus:border-black outline-none transition-colors"
                       />
                     </div>
                   </div>
@@ -267,32 +248,29 @@ export default function App() {
                   <button
                     onClick={handleEmailSignIn}
                     disabled={loading}
-                    className="w-full bg-gray-900 text-white py-3 rounded-lg font-medium hover:bg-gray-800 transition-colors disabled:opacity-50"
+                    className="w-full bg-black text-white py-3 text-xs font-bold uppercase tracking-wider hover:bg-black/80 transition-colors disabled:opacity-50"
                   >
-                    {loading ? 'Sending...' : 'Send me a sign-in link'}
+                    {loading ? 'Sending...' : 'Send sign-in link'}
                   </button>
                 </div>
 
-                <p className="text-xs text-gray-500 mt-4 text-center">
-                  We'll email you a magic link for a password-free sign in
+                <p className="text-xs text-black/30 mt-6 text-center tracking-wide">
+                  No password required
                 </p>
               </>
             ) : (
               <div className="text-center">
-                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Mail className="w-8 h-8 text-green-600" />
-                </div>
-                <h3 className="text-lg font-medium text-gray-900 mb-2">Check your email</h3>
-                <p className="text-sm text-gray-600 mb-6">
-                  We sent a sign-in link to <strong>{localStorage.getItem('emailForSignIn')}</strong>
+                <Mail className="w-8 h-8 text-black mx-auto mb-4" />
+                <h3 className="text-sm font-bold text-black mb-2 uppercase tracking-wider">Check your email</h3>
+                <p className="text-xs text-black/50 mb-6">
+                  Link sent to <strong className="text-black">{localStorage.getItem('emailForSignIn')}</strong>
                 </p>
-                
-                <div className="bg-blue-50 rounded-lg p-4 mb-6 border border-blue-100">
-                  <p className="text-xs text-blue-900 font-medium mb-2">Demo Mode:</p>
-                  <p className="text-xs text-blue-700 mb-3">In production, click the link in your email. For now:</p>
+
+                <div className="border border-black/10 p-4 mb-6">
+                  <p className="text-xs text-black/40 mb-3 uppercase tracking-wider">Demo mode</p>
                   <button
                     onClick={completeEmailSignIn}
-                    className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
+                    className="w-full bg-black text-white py-2 px-4 text-xs font-bold uppercase tracking-wider hover:bg-black/80 transition-colors"
                   >
                     Complete Sign In
                   </button>
@@ -300,16 +278,16 @@ export default function App() {
 
                 <button
                   onClick={() => setEmailSent(false)}
-                  className="text-sm text-gray-600 hover:text-gray-900"
+                  className="text-xs text-black/40 hover:text-black tracking-wide uppercase"
                 >
-                  Use a different email
+                  Use different email
                 </button>
               </div>
             )}
           </div>
 
-          <p className="text-center text-xs text-gray-500 mt-6">
-            Beta v1.0 • No passwords required
+          <p className="text-center text-xs text-black/20 mt-8 tracking-wider uppercase">
+            Beta v1.0
           </p>
         </div>
       </div>
@@ -317,83 +295,83 @@ export default function App() {
   }
 
   return (
-    <div className="max-w-2xl mx-auto bg-white min-h-screen relative sm:shadow-lg">
-      <div className="sticky top-0 bg-white/80 backdrop-blur-md border-b border-gray-100 px-4 sm:px-6 py-4 sm:py-5 z-10">
+    <div className="max-w-2xl mx-auto bg-white min-h-screen relative sm:border-x sm:border-black/5">
+      <div className="sticky top-0 bg-white border-b border-black/10 px-4 sm:px-6 py-4 sm:py-5 z-10">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-light tracking-wide text-gray-900">umami</h1>
-            <p className="text-xs text-gray-500 mt-1 font-light">what your friends are into right now</p>
+            <h1 className="text-lg tracking-widest text-black uppercase">umami</h1>
+            <p className="text-xs text-black/30 mt-0.5 tracking-wide">what you're into right now</p>
           </div>
           <button
             onClick={handleLogout}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
+            className="text-black/30 hover:text-black transition-colors"
             title="Log out"
           >
-            <LogOut className="w-5 h-5" />
+            <LogOut className="w-4 h-4" />
           </button>
         </div>
       </div>
 
       <div className="pb-24">
         {activeTab === 'feed' && allFeedItems.length === 0 && (
-          <div className="text-center py-16 px-4 sm:px-6">
-            <Plus className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-            <p className="text-gray-900 font-medium mb-1">Your feed is empty</p>
-            <p className="text-sm text-gray-500 mb-6">Share what you're into — music, books, shows, and more</p>
+          <div className="text-center py-20 px-4 sm:px-6">
+            <Plus className="w-8 h-8 text-black/20 mx-auto mb-4" />
+            <p className="text-sm text-black font-bold uppercase tracking-wider mb-1">Empty</p>
+            <p className="text-xs text-black/40 mb-8 tracking-wide">Share what you're into</p>
             <button
               onClick={() => setShowAddModal(true)}
-              className="bg-gray-900 text-white px-6 py-2.5 rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors"
+              className="bg-black text-white px-6 py-2.5 text-xs font-bold uppercase tracking-wider hover:bg-black/80 transition-colors"
             >
-              Share your first pick
+              Add your first pick
             </button>
           </div>
         )}
         {activeTab === 'feed' && allFeedItems.map((item) => (
-          <div key={item.id} className={`${item.color} border-b border-gray-50 p-4 sm:p-6`}>
-            <div className="flex items-start justify-between mb-4">
+          <div key={item.id} className="border-b border-black/5 p-4 sm:p-6">
+            <div className="flex items-start justify-between mb-3">
               <div className="flex items-center gap-3">
-                <img 
-                  src={item.avatar} 
+                <img
+                  src={item.avatar}
                   alt={item.user}
-                  className="w-10 h-10 rounded-full"
+                  className="w-8 h-8 rounded-full border border-black/10"
                 />
                 <div>
-                  <p className="font-medium text-gray-900 text-sm">{item.user}</p>
-                  <p className="text-xs text-gray-400 mt-0.5">{item.time}</p>
+                  <p className="text-xs font-bold text-black uppercase tracking-wider">{item.user}</p>
+                  <p className="text-xs text-black/30 mt-0.5">{item.time}</p>
                 </div>
               </div>
-              <div className="text-gray-400">
+              <div className="text-black/20">
                 {getIcon(item.type)}
               </div>
             </div>
-            
-            <div className="ml-13">
-              <p className="text-base font-medium text-gray-900 mb-0.5 leading-snug">{item.content}</p>
-              <p className="text-xs text-gray-500 mb-4 font-light">{item.category}</p>
-              
-              <div className="flex flex-wrap gap-1.5 mb-4">
+
+            <div className="ml-11">
+              <p className="text-sm text-black mb-0.5">{item.content}</p>
+              <p className="text-xs text-black/40 mb-4 tracking-wide">{item.category}</p>
+
+              <div className="flex flex-wrap gap-2 mb-4">
                 {item.links.map((link, idx) => (
                   <a
                     key={idx}
                     href={link.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-gray-500 text-xs px-2 py-1 rounded flex items-center gap-1 hover:text-gray-700 hover:bg-white/50 transition-colors"
+                    className="text-black/30 text-xs tracking-wide uppercase flex items-center gap-1 hover:text-black transition-colors"
                   >
                     {link.service}
                     <ExternalLink className="w-2.5 h-2.5" />
                   </a>
                 ))}
               </div>
-              
+
               <button
                 onClick={() => toggleLike(item.id)}
-                className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-red-400 transition-colors"
+                className="flex items-center gap-1.5 text-xs text-black/30 hover:text-black transition-colors"
               >
-                <Heart 
-                  className={`w-3.5 h-3.5 ${likedItems.has(item.id) ? 'fill-red-400 text-red-400' : ''}`}
+                <Heart
+                  className={`w-3.5 h-3.5 ${likedItems.has(item.id) ? 'fill-black text-black' : ''}`}
                 />
-                <span className={likedItems.has(item.id) ? 'text-red-400' : ''}>
+                <span className={likedItems.has(item.id) ? 'text-black' : ''}>
                   {likedItems.has(item.id) ? 'Saved' : 'Save'}
                 </span>
               </button>
@@ -403,32 +381,30 @@ export default function App() {
 
         {activeTab === 'discover' && (
           <div className="p-4 sm:p-6">
-            <h2 className="text-lg font-medium text-gray-900 mb-1">Discover</h2>
-            <p className="text-xs text-gray-500 mb-6 font-light">find people with great taste</p>
+            <h2 className="text-sm font-bold text-black uppercase tracking-wider mb-1">Discover</h2>
+            <p className="text-xs text-black/30 mb-8 tracking-wide">find people with great taste</p>
             <div className="text-center py-12">
-              <Compass className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-              <p className="text-gray-500">Coming soon</p>
-              <p className="text-xs text-gray-400 mt-2">Invite your friends to share their picks</p>
+              <Compass className="w-8 h-8 text-black/15 mx-auto mb-4" />
+              <p className="text-xs text-black/30 uppercase tracking-wider">Coming soon</p>
             </div>
           </div>
         )}
 
         {activeTab === 'saved' && (
           <div className="p-4 sm:p-6">
-            <h2 className="text-lg font-medium text-gray-900 mb-1">Saved Items</h2>
-            <p className="text-xs text-gray-500 mb-6 font-light">things you want to check out</p>
+            <h2 className="text-sm font-bold text-black uppercase tracking-wider mb-1">Saved</h2>
+            <p className="text-xs text-black/30 mb-8 tracking-wide">things to check out</p>
             {likedItems.size === 0 ? (
               <div className="text-center py-12">
-                <Heart className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-                <p className="text-gray-500">No saved items yet</p>
-                <p className="text-xs text-gray-400 mt-2">Tap the heart on items to save them</p>
+                <Heart className="w-8 h-8 text-black/15 mx-auto mb-4" />
+                <p className="text-xs text-black/30 uppercase tracking-wider">Nothing saved yet</p>
               </div>
             ) : (
               <div className="space-y-2">
                 {allFeedItems.filter(item => likedItems.has(item.id)).map(item => (
-                  <div key={item.id} className="bg-gray-50 rounded-lg p-4">
-                    <p className="font-medium text-sm">{item.content}</p>
-                    <p className="text-xs text-gray-500 mt-1">{item.category}</p>
+                  <div key={item.id} className="border border-black/5 p-4">
+                    <p className="text-sm text-black">{item.content}</p>
+                    <p className="text-xs text-black/30 mt-1 tracking-wide">{item.category}</p>
                   </div>
                 ))}
               </div>
@@ -438,90 +414,90 @@ export default function App() {
 
         {activeTab === 'profile' && (
           <div className="p-4 sm:p-6">
-            <div className="text-center mb-8">
-              <img 
+            <div className="text-center mb-10">
+              <img
                 src={currentUser.avatar}
                 alt={currentUser.name}
-                className="w-24 h-24 rounded-full mx-auto mb-4"
+                className="w-20 h-20 rounded-full mx-auto mb-4 border border-black/10"
               />
-              <h2 className="text-xl font-medium text-gray-900">{currentUser.name}</h2>
-              <p className="text-sm text-gray-500 mt-1">{currentUser.email}</p>
+              <h2 className="text-sm font-bold text-black uppercase tracking-wider">{currentUser.name}</h2>
+              <p className="text-xs text-black/30 mt-1">{currentUser.email}</p>
             </div>
 
-            <div className="space-y-3">
-              <div className="bg-gray-50 rounded-lg p-4">
-                <p className="text-sm text-gray-600">Items shared</p>
-                <p className="text-2xl font-medium text-gray-900 mt-1">{userItems.length}</p>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="border border-black/5 p-4 text-center">
+                <p className="text-2xl font-bold text-black">{userItems.length}</p>
+                <p className="text-xs text-black/30 mt-1 uppercase tracking-wider">Shared</p>
               </div>
-              <div className="bg-gray-50 rounded-lg p-4">
-                <p className="text-sm text-gray-600">Saved items</p>
-                <p className="text-2xl font-medium text-gray-900 mt-1">{likedItems.size}</p>
+              <div className="border border-black/5 p-4 text-center">
+                <p className="text-2xl font-bold text-black">{likedItems.size}</p>
+                <p className="text-xs text-black/30 mt-1 uppercase tracking-wider">Saved</p>
               </div>
             </div>
           </div>
         )}
       </div>
 
-      <div className="fixed bottom-0 left-0 right-0 max-w-2xl mx-auto bg-white/80 backdrop-blur-md border-t border-gray-100 sm:shadow-lg">
+      <div className="fixed bottom-0 left-0 right-0 max-w-2xl mx-auto bg-white border-t border-black/10">
         <div className="flex justify-around items-center px-4 sm:px-6 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
           <button
             onClick={() => setActiveTab('feed')}
-            className={`flex flex-col items-center gap-1 transition-colors ${activeTab === 'feed' ? 'text-gray-900' : 'text-gray-400'}`}
+            className={`flex flex-col items-center gap-1 transition-colors ${activeTab === 'feed' ? 'text-black' : 'text-black/20'}`}
           >
             <Home className="w-5 h-5" />
-            <span className="text-xs font-light">Feed</span>
+            <span className="text-xs tracking-wider uppercase">Feed</span>
           </button>
-          
+
           <button
             onClick={() => setActiveTab('discover')}
-            className={`flex flex-col items-center gap-1 transition-colors ${activeTab === 'discover' ? 'text-gray-900' : 'text-gray-400'}`}
+            className={`flex flex-col items-center gap-1 transition-colors ${activeTab === 'discover' ? 'text-black' : 'text-black/20'}`}
           >
             <Compass className="w-5 h-5" />
-            <span className="text-xs font-light">Discover</span>
+            <span className="text-xs tracking-wider uppercase">Discover</span>
           </button>
-          
-          <button 
+
+          <button
             onClick={() => setShowAddModal(true)}
-            className="bg-gray-900 text-white rounded-full p-3 -mt-6 shadow-lg hover:bg-gray-800 transition-colors"
+            className="bg-black text-white rounded-full p-3 -mt-6 shadow-lg hover:bg-black/80 transition-colors"
           >
             <Plus className="w-5 h-5" />
           </button>
-          
+
           <button
             onClick={() => setActiveTab('saved')}
-            className={`flex flex-col items-center gap-1 transition-colors ${activeTab === 'saved' ? 'text-gray-900' : 'text-gray-400'}`}
+            className={`flex flex-col items-center gap-1 transition-colors ${activeTab === 'saved' ? 'text-black' : 'text-black/20'}`}
           >
             <Heart className="w-5 h-5" />
-            <span className="text-xs font-light">Saved</span>
+            <span className="text-xs tracking-wider uppercase">Saved</span>
           </button>
-          
+
           <button
             onClick={() => setActiveTab('profile')}
-            className={`flex flex-col items-center gap-1 transition-colors ${activeTab === 'profile' ? 'text-gray-900' : 'text-gray-400'}`}
+            className={`flex flex-col items-center gap-1 transition-colors ${activeTab === 'profile' ? 'text-black' : 'text-black/20'}`}
           >
             <User className="w-5 h-5" />
-            <span className="text-xs font-light">Profile</span>
+            <span className="text-xs tracking-wider uppercase">Profile</span>
           </button>
         </div>
       </div>
 
       {showAddModal && (
         <div className="fixed inset-0 bg-black/50 flex items-end sm:items-center justify-center z-50">
-          <div className="bg-white rounded-t-3xl sm:rounded-2xl w-full max-w-lg p-4 sm:p-6 sm:mx-4">
+          <div className="bg-white rounded-t-2xl sm:rounded-lg w-full max-w-lg p-4 sm:p-6 sm:mx-4">
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-medium">Share what you're into</h3>
-              <button onClick={() => setShowAddModal(false)} className="text-gray-400 hover:text-gray-600">
-                <Plus className="w-6 h-6 rotate-45" />
+              <h3 className="text-sm font-bold uppercase tracking-wider">Share a pick</h3>
+              <button onClick={() => setShowAddModal(false)} className="text-black/30 hover:text-black">
+                <Plus className="w-5 h-5 rotate-45" />
               </button>
             </div>
 
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Type</label>
+                <label className="block text-xs font-bold text-black mb-2 uppercase tracking-wider">Type</label>
                 <select
                   value={newItem.type}
                   onChange={(e) => setNewItem({ ...newItem, type: e.target.value })}
-                  className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent outline-none"
+                  className="w-full px-4 py-3 border border-black/20 text-sm focus:border-black outline-none transition-colors"
                 >
                   <option value="music">Music</option>
                   <option value="book">Book</option>
@@ -533,32 +509,32 @@ export default function App() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Title</label>
+                <label className="block text-xs font-bold text-black mb-2 uppercase tracking-wider">Title</label>
                 <input
                   type="text"
                   value={newItem.content}
                   onChange={(e) => setNewItem({ ...newItem, content: e.target.value })}
                   placeholder="e.g., Blonde - Frank Ocean"
-                  className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent outline-none"
+                  className="w-full px-4 py-3 border border-black/20 text-sm focus:border-black outline-none transition-colors"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
+                <label className="block text-xs font-bold text-black mb-2 uppercase tracking-wider">Category</label>
                 <input
                   type="text"
                   value={newItem.category}
                   onChange={(e) => setNewItem({ ...newItem, category: e.target.value })}
                   placeholder="e.g., Album, Novel, TV Series"
-                  className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent outline-none"
+                  className="w-full px-4 py-3 border border-black/20 text-sm focus:border-black outline-none transition-colors"
                 />
               </div>
 
               <button
                 onClick={handleAddItem}
-                className="w-full bg-gray-900 text-white py-3 rounded-lg font-medium hover:bg-gray-800 transition-colors flex items-center justify-center gap-2"
+                className="w-full bg-black text-white py-3 text-xs font-bold uppercase tracking-wider hover:bg-black/80 transition-colors flex items-center justify-center gap-2"
               >
-                <Send className="w-4 h-4" />
+                <Send className="w-3.5 h-3.5" />
                 Share
               </button>
             </div>
