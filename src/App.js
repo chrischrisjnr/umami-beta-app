@@ -52,13 +52,15 @@ const useAuth = () => {
   };
 
   const signInWithGoogle = async () => {
+    const name = prompt('Welcome! What should we call you?');
+    if (!name) return;
+    const email = prompt('And your email?');
+    if (!email) return;
+
     setLoading(true);
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      const email = 'demo@gmail.com';
-      const name = 'Demo User';
-      
+      await new Promise(resolve => setTimeout(resolve, 500));
+
       const newUser = {
         id: Date.now(),
         email,
@@ -89,11 +91,24 @@ export default function App() {
   const { currentUser, loading, emailSent, setEmailSent, sendSignInLink, completeEmailSignIn, signInWithGoogle, logout } = useAuth();
   const [email, setEmail] = useState('');
   const [activeTab, setActiveTab] = useState('feed');
-  const [likedItems, setLikedItems] = useState(new Set());
-  const [following, setFollowing] = useState(new Set([1, 2, 3, 4, 5, 6]));
+  const [likedItems, setLikedItems] = useState(() => {
+    const saved = localStorage.getItem('umamiLikedItems');
+    return saved ? new Set(JSON.parse(saved)) : new Set();
+  });
   const [showAddModal, setShowAddModal] = useState(false);
   const [newItem, setNewItem] = useState({ type: 'music', content: '', category: '' });
-  const [userItems, setUserItems] = useState([]);
+  const [userItems, setUserItems] = useState(() => {
+    const saved = localStorage.getItem('umamiItems');
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  useEffect(() => {
+    localStorage.setItem('umamiItems', JSON.stringify(userItems));
+  }, [userItems]);
+
+  useEffect(() => {
+    localStorage.setItem('umamiLikedItems', JSON.stringify([...likedItems]));
+  }, [likedItems]);
 
   const handleEmailSignIn = async () => {
     if (!email || !email.includes('@')) {
@@ -173,61 +188,7 @@ export default function App() {
     return links[type] || [];
   };
 
-  const sampleFeedItems = [
-    {
-      id: 1,
-      userId: 1,
-      user: 'Sarah Chen',
-      avatar: 'https://api.dicebear.com/9.x/open-peeps/svg?seed=Sarah&backgroundColor=ffd5dc',
-      type: 'music',
-      content: 'Blonde - Frank Ocean',
-      category: 'Album',
-      time: '2m ago',
-      color: 'bg-gradient-to-br from-purple-50 to-pink-50',
-      links: [
-        { service: 'Spotify', url: 'https://open.spotify.com' },
-        { service: 'Apple Music', url: 'https://music.apple.com' }
-      ]
-    },
-    {
-      id: 2,
-      userId: 2,
-      user: 'Marcus Reid',
-      avatar: 'https://api.dicebear.com/9.x/open-peeps/svg?seed=Marcus&backgroundColor=c0aede',
-      type: 'book',
-      content: 'Tomorrow, and Tomorrow, and Tomorrow',
-      category: 'Novel',
-      time: '15m ago',
-      color: 'bg-gradient-to-br from-amber-50 to-yellow-50',
-      links: [
-        { service: 'Audible', url: 'https://www.audible.com' },
-        { service: 'Kindle', url: 'https://www.amazon.com/kindle' }
-      ]
-    },
-    {
-      id: 3,
-      userId: 3,
-      user: 'Emma Walsh',
-      avatar: 'https://api.dicebear.com/9.x/open-peeps/svg?seed=Emma&backgroundColor=ffdfbf',
-      type: 'theatre',
-      content: 'Merrily We Roll Along',
-      category: 'Broadway Musical',
-      time: '45m ago',
-      color: 'bg-gradient-to-br from-rose-50 to-red-50',
-      links: [
-        { service: 'Telecharge', url: 'https://www.telecharge.com' },
-        { service: 'TodayTix', url: 'https://www.todaytix.com' }
-      ]
-    }
-  ];
-
-  const allFeedItems = [...userItems, ...sampleFeedItems];
-
-  const tasteMakers = [
-    { id: 7, name: 'Dev Patel', avatar: 'https://api.dicebear.com/9.x/open-peeps/svg?seed=Dev&backgroundColor=ffdfbf', specialty: 'Film & Music', items: 234 },
-    { id: 8, name: 'Zoe Martinez', avatar: 'https://api.dicebear.com/9.x/open-peeps/svg?seed=Zoe&backgroundColor=c0aede', specialty: 'Books & Podcasts', items: 189 },
-    { id: 9, name: 'Kai Nakamura', avatar: 'https://api.dicebear.com/9.x/open-peeps/svg?seed=Kai&backgroundColor=b6e3f4', specialty: 'Music', items: 412 }
-  ];
+  const allFeedItems = userItems;
 
   const getIcon = (type) => {
     const iconClass = "w-4 h-4";
@@ -246,14 +207,6 @@ export default function App() {
     setLikedItems(prev => {
       const newSet = new Set(prev);
       newSet.has(id) ? newSet.delete(id) : newSet.add(id);
-      return newSet;
-    });
-  };
-
-  const toggleFollow = (userId) => {
-    setFollowing(prev => {
-      const newSet = new Set(prev);
-      newSet.has(userId) ? newSet.delete(userId) : newSet.add(userId);
       return newSet;
     });
   };
@@ -382,6 +335,19 @@ export default function App() {
       </div>
 
       <div className="pb-20">
+        {activeTab === 'feed' && allFeedItems.length === 0 && (
+          <div className="text-center py-16 px-6">
+            <Plus className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+            <p className="text-gray-900 font-medium mb-1">Your feed is empty</p>
+            <p className="text-sm text-gray-500 mb-6">Share what you're into — music, books, shows, and more</p>
+            <button
+              onClick={() => setShowAddModal(true)}
+              className="bg-gray-900 text-white px-6 py-2.5 rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors"
+            >
+              Share your first pick
+            </button>
+          </div>
+        )}
         {activeTab === 'feed' && allFeedItems.map((item) => (
           <div key={item.id} className={`${item.color} border-b border-gray-50 p-6`}>
             <div className="flex items-start justify-between mb-4">
@@ -437,36 +403,12 @@ export default function App() {
 
         {activeTab === 'discover' && (
           <div className="p-6">
-            <h2 className="text-lg font-medium text-gray-900 mb-1">Taste Makers</h2>
-            <p className="text-xs text-gray-500 mb-6 font-light">people with consistently great taste</p>
-            
-            <div className="space-y-3">
-              {tasteMakers.map((maker) => (
-                <div key={maker.id} className="bg-gray-50/50 rounded-xl p-4 flex items-center justify-between border border-gray-100">
-                  <div className="flex items-center gap-3">
-                    <img 
-                      src={maker.avatar} 
-                      alt={maker.name}
-                      className="w-12 h-12 rounded-full"
-                    />
-                    <div>
-                      <p className="font-medium text-gray-900 text-sm">{maker.name}</p>
-                      <p className="text-xs text-gray-600 font-light">{maker.specialty}</p>
-                      <p className="text-xs text-gray-400 mt-0.5">{maker.items} items</p>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => toggleFollow(maker.id)}
-                    className={`px-4 py-1.5 rounded-full text-xs font-medium transition-colors ${
-                      following.has(maker.id)
-                        ? 'bg-gray-200 text-gray-600 hover:bg-gray-300'
-                        : 'bg-gray-900 text-white hover:bg-gray-800'
-                    }`}
-                  >
-                    {following.has(maker.id) ? 'Following' : 'Follow'}
-                  </button>
-                </div>
-              ))}
+            <h2 className="text-lg font-medium text-gray-900 mb-1">Discover</h2>
+            <p className="text-xs text-gray-500 mb-6 font-light">find people with great taste</p>
+            <div className="text-center py-12">
+              <Compass className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+              <p className="text-gray-500">Coming soon</p>
+              <p className="text-xs text-gray-400 mt-2">Invite your friends to share their picks</p>
             </div>
           </div>
         )}
@@ -510,10 +452,6 @@ export default function App() {
               <div className="bg-gray-50 rounded-lg p-4">
                 <p className="text-sm text-gray-600">Items shared</p>
                 <p className="text-2xl font-medium text-gray-900 mt-1">{userItems.length}</p>
-              </div>
-              <div className="bg-gray-50 rounded-lg p-4">
-                <p className="text-sm text-gray-600">Following</p>
-                <p className="text-2xl font-medium text-gray-900 mt-1">{following.size}</p>
               </div>
               <div className="bg-gray-50 rounded-lg p-4">
                 <p className="text-sm text-gray-600">Saved items</p>
