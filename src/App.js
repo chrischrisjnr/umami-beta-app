@@ -317,8 +317,8 @@ export default function App() {
   }
 
   return (
-    <div className="max-w-md mx-auto bg-white min-h-screen relative">
-      <div className="sticky top-0 bg-white/80 backdrop-blur-md border-b border-gray-100 px-6 py-5 z-10">
+    <div className="max-w-2xl mx-auto bg-white min-h-screen relative sm:shadow-lg">
+      <div className="sticky top-0 bg-white/80 backdrop-blur-md border-b border-gray-100 px-4 sm:px-6 py-4 sm:py-5 z-10">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-light tracking-wide text-gray-900">umami</h1>
@@ -334,9 +334,9 @@ export default function App() {
         </div>
       </div>
 
-      <div className="pb-20">
+      <div className="pb-24">
         {activeTab === 'feed' && allFeedItems.length === 0 && (
-          <div className="text-center py-16 px-6">
+          <div className="text-center py-16 px-4 sm:px-6">
             <Plus className="w-12 h-12 text-gray-300 mx-auto mb-4" />
             <p className="text-gray-900 font-medium mb-1">Your feed is empty</p>
             <p className="text-sm text-gray-500 mb-6">Share what you're into — music, books, shows, and more</p>
@@ -349,7 +349,7 @@ export default function App() {
           </div>
         )}
         {activeTab === 'feed' && allFeedItems.map((item) => (
-          <div key={item.id} className={`${item.color} border-b border-gray-50 p-6`}>
+          <div key={item.id} className={`${item.color} border-b border-gray-50 p-4 sm:p-6`}>
             <div className="flex items-start justify-between mb-4">
               <div className="flex items-center gap-3">
                 <img 
@@ -402,7 +402,7 @@ export default function App() {
         ))}
 
         {activeTab === 'discover' && (
-          <div className="p-6">
+          <div className="p-4 sm:p-6">
             <h2 className="text-lg font-medium text-gray-900 mb-1">Discover</h2>
             <p className="text-xs text-gray-500 mb-6 font-light">find people with great taste</p>
             <div className="text-center py-12">
@@ -414,7 +414,7 @@ export default function App() {
         )}
 
         {activeTab === 'saved' && (
-          <div className="p-6">
+          <div className="p-4 sm:p-6">
             <h2 className="text-lg font-medium text-gray-900 mb-1">Saved Items</h2>
             <p className="text-xs text-gray-500 mb-6 font-light">things you want to check out</p>
             {likedItems.size === 0 ? (
@@ -437,7 +437,7 @@ export default function App() {
         )}
 
         {activeTab === 'profile' && (
-          <div className="p-6">
+          <div className="p-4 sm:p-6">
             <div className="text-center mb-8">
               <img 
                 src={currentUser.avatar}
@@ -462,8 +462,8 @@ export default function App() {
         )}
       </div>
 
-      <div className="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-white/80 backdrop-blur-md border-t border-gray-100">
-        <div className="flex justify-around items-center px-6 py-3">
+      <div className="fixed bottom-0 left-0 right-0 max-w-2xl mx-auto bg-white/80 backdrop-blur-md border-t border-gray-100 sm:shadow-lg">
+        <div className="flex justify-around items-center px-4 sm:px-6 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
           <button
             onClick={() => setActiveTab('feed')}
             className={`flex flex-col items-center gap-1 transition-colors ${activeTab === 'feed' ? 'text-gray-900' : 'text-gray-400'}`}
@@ -506,8 +506,8 @@ export default function App() {
       </div>
 
       {showAddModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-end justify-center z-50">
-          <div className="bg-white rounded-t-3xl w-full max-w-md p-6">
+        <div className="fixed inset-0 bg-black/50 flex items-end sm:items-center justify-center z-50">
+          <div className="bg-white rounded-t-3xl sm:rounded-2xl w-full max-w-lg p-4 sm:p-6 sm:mx-4">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-lg font-medium">Share what you're into</h3>
               <button onClick={() => setShowAddModal(false)} className="text-gray-400 hover:text-gray-600">
