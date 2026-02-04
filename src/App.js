@@ -1,10 +1,38 @@
 import React, { useState, useEffect } from 'react';
-import { Play, Book, Headphones, Tv, Heart, Plus, User, Home, Compass, ExternalLink, Ticket, Palette, Mail, LogOut, Send } from 'lucide-react';
+import { Play, Book, Headphones, Tv, Heart, Plus, User, Home, Compass, ExternalLink, Ticket, Palette, Mail, LogOut, Send, ChevronLeft } from 'lucide-react';
+
+const AVATAR_SEEDS = [
+  'Felix', 'Aneka', 'Jade', 'Milo', 'Sasha', 'Ravi', 'Luna', 'Kai',
+  'Zara', 'Oscar', 'Nyla', 'Theo', 'Iris', 'Leo', 'Dara', 'Nico',
+  'Emi', 'Sol', 'Mina', 'Jude', 'Aria', 'Ezra', 'Sage', 'Rio'
+];
+
+const getAvatarUrl = (seed) =>
+  `https://api.dicebear.com/9.x/open-peeps/svg?seed=${seed}&backgroundColor=ffffff`;
+
+const AvatarPicker = ({ selected, onSelect }) => {
+  return (
+    <div>
+      <p className="text-xs font-bold text-black mb-3 uppercase tracking-wider">Choose your avatar</p>
+      <div className="grid grid-cols-6 gap-2">
+        {AVATAR_SEEDS.map((seed) => (
+          <button
+            key={seed}
+            onClick={() => onSelect(getAvatarUrl(seed))}
+            className={`w-full aspect-square rounded-full border-2 transition-colors overflow-hidden ${
+              selected === getAvatarUrl(seed) ? 'border-black' : 'border-black/10 hover:border-black/30'
+            }`}
+          >
+            <img src={getAvatarUrl(seed)} alt={seed} className="w-full h-full" />
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+};
 
 const useAuth = () => {
   const [currentUser, setCurrentUser] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [emailSent, setEmailSent] = useState(false);
 
   useEffect(() => {
     const savedUser = localStorage.getItem('umamiUser');
@@ -13,99 +41,77 @@ const useAuth = () => {
     }
   }, []);
 
-  const sendSignInLink = async (email) => {
-    setLoading(true);
-    try {
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      localStorage.setItem('emailForSignIn', email);
-      setEmailSent(true);
-      alert(`Sign-in link sent to ${email}!\n\nFor demo: Click "Complete Sign In" below`);
-    } catch (error) {
-      alert(error.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const completeEmailSignIn = async () => {
-    const email = localStorage.getItem('emailForSignIn');
-    if (!email) {
-      alert('No pending sign-in found');
-      return;
-    }
-
-    const name = prompt('Welcome! What should we call you?');
-    if (!name) return;
-
+  const createAccount = ({ name, email, avatar }) => {
     const newUser = {
       id: Date.now(),
       email,
       name,
-      avatar: `https://api.dicebear.com/9.x/open-peeps/svg?seed=${name}&backgroundColor=ffd5dc`,
-      authMethod: 'email'
+      avatar
     };
-
     setCurrentUser(newUser);
     localStorage.setItem('umamiUser', JSON.stringify(newUser));
-    localStorage.removeItem('emailForSignIn');
-    setEmailSent(false);
   };
 
-  const signInWithGoogle = async () => {
-    setLoading(true);
-    try {
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      const email = 'demo@gmail.com';
-      const name = 'Demo User';
-      
-      const newUser = {
-        id: Date.now(),
-        email,
-        name,
-        avatar: `https://api.dicebear.com/9.x/open-peeps/svg?seed=${name}&backgroundColor=c0aede`,
-        authMethod: 'google'
-      };
-
-      setCurrentUser(newUser);
-      localStorage.setItem('umamiUser', JSON.stringify(newUser));
-    } catch (error) {
-      alert(error.message);
-    } finally {
-      setLoading(false);
-    }
+  const updateAvatar = (avatar) => {
+    const updated = { ...currentUser, avatar };
+    setCurrentUser(updated);
+    localStorage.setItem('umamiUser', JSON.stringify(updated));
   };
 
-  const logout = async () => {
+  const logout = () => {
     setCurrentUser(null);
     localStorage.removeItem('umamiUser');
-    setEmailSent(false);
   };
 
-  return { currentUser, loading, emailSent, setEmailSent, sendSignInLink, completeEmailSignIn, signInWithGoogle, logout };
+  return { currentUser, createAccount, updateAvatar, logout };
 };
 
 export default function App() {
-  const { currentUser, loading, emailSent, setEmailSent, sendSignInLink, completeEmailSignIn, signInWithGoogle, logout } = useAuth();
-  const [email, setEmail] = useState('');
+  const { currentUser, createAccount, updateAvatar, logout } = useAuth();
+  const [signUpStep, setSignUpStep] = useState('form'); // 'form' | 'avatar'
+  const [signUpName, setSignUpName] = useState('');
+  const [signUpEmail, setSignUpEmail] = useState('');
+  const [signUpAvatar, setSignUpAvatar] = useState(getAvatarUrl(AVATAR_SEEDS[0]));
   const [activeTab, setActiveTab] = useState('feed');
-  const [likedItems, setLikedItems] = useState(new Set());
-  const [following, setFollowing] = useState(new Set([1, 2, 3, 4, 5, 6]));
+  const [showAvatarPicker, setShowAvatarPicker] = useState(false);
+  const [likedItems, setLikedItems] = useState(() => {
+    const saved = localStorage.getItem('umamiLikedItems');
+    return saved ? new Set(JSON.parse(saved)) : new Set();
+  });
   const [showAddModal, setShowAddModal] = useState(false);
   const [newItem, setNewItem] = useState({ type: 'music', content: '', category: '' });
-  const [userItems, setUserItems] = useState([]);
+  const [userItems, setUserItems] = useState(() => {
+    const saved = localStorage.getItem('umamiItems');
+    return saved ? JSON.parse(saved) : [];
+  });
 
-  const handleEmailSignIn = async () => {
-    if (!email || !email.includes('@')) {
-      alert('Please enter a valid email');
+  useEffect(() => {
+    localStorage.setItem('umamiItems', JSON.stringify(userItems));
+  }, [userItems]);
+
+  useEffect(() => {
+    localStorage.setItem('umamiLikedItems', JSON.stringify([...likedItems]));
+  }, [likedItems]);
+
+  const handleSignUp = () => {
+    if (!signUpName || !signUpEmail || !signUpEmail.includes('@')) {
+      alert('Please enter your name and a valid email');
       return;
     }
-    await sendSignInLink(email);
+    setSignUpStep('avatar');
   };
 
-  const handleLogout = async () => {
-    await logout();
+  const handleCompleteSignUp = () => {
+    createAccount({ name: signUpName, email: signUpEmail, avatar: signUpAvatar });
+    setSignUpStep('form');
+    setSignUpName('');
+    setSignUpEmail('');
+  };
+
+  const handleLogout = () => {
+    logout();
     setActiveTab('feed');
+    setSignUpStep('form');
   };
 
   const handleAddItem = () => {
@@ -123,8 +129,7 @@ export default function App() {
       content: newItem.content,
       category: newItem.category,
       time: 'Just now',
-      color: getColorForType(newItem.type),
-      links: getDefaultLinksForType(newItem.type)
+      wikiUrl: `https://en.wikipedia.org/wiki/Special:Search?search=${encodeURIComponent(newItem.content)}`
     };
 
     setUserItems([item, ...userItems]);
@@ -132,102 +137,16 @@ export default function App() {
     setNewItem({ type: 'music', content: '', category: '' });
   };
 
-  const getColorForType = (type) => {
-    const colors = {
-      music: 'bg-gradient-to-br from-purple-50 to-pink-50',
-      book: 'bg-gradient-to-br from-amber-50 to-yellow-50',
-      tv: 'bg-gradient-to-br from-blue-50 to-cyan-50',
-      podcast: 'bg-gradient-to-br from-green-50 to-emerald-50',
-      theatre: 'bg-gradient-to-br from-rose-50 to-red-50',
-      exhibition: 'bg-gradient-to-br from-indigo-50 to-violet-50'
-    };
-    return colors[type] || 'bg-gray-50';
+  const categoryOptions = {
+    music: ['Album', 'Single', 'EP', 'Mixtape', 'Soundtrack', 'Live Album', 'DJ Mix', 'Radio Show'],
+    book: ['Novel', 'Non-Fiction', 'Poetry', 'Memoir', 'Short Stories', 'Graphic Novel'],
+    tv: ['TV Series', 'Film', 'Documentary', 'Mini-Series', 'Anime', 'Short Film'],
+    podcast: ['Interview', 'Narrative', 'Comedy', 'True Crime', 'Educational', 'News'],
+    theatre: ['Musical', 'Play', 'Opera', 'Ballet', 'Comedy', 'One-Person Show'],
+    exhibition: ['Art', 'Photography', 'History', 'Science', 'Design', 'Mixed Media']
   };
 
-  const getDefaultLinksForType = (type) => {
-    const links = {
-      music: [
-        { service: 'Spotify', url: 'https://open.spotify.com' },
-        { service: 'Apple Music', url: 'https://music.apple.com' }
-      ],
-      book: [
-        { service: 'Audible', url: 'https://www.audible.com' },
-        { service: 'Kindle', url: 'https://www.amazon.com/kindle' }
-      ],
-      tv: [
-        { service: 'Netflix', url: 'https://www.netflix.com' },
-        { service: 'Hulu', url: 'https://www.hulu.com' }
-      ],
-      podcast: [
-        { service: 'Spotify', url: 'https://open.spotify.com' },
-        { service: 'Apple Podcasts', url: 'https://podcasts.apple.com' }
-      ],
-      theatre: [
-        { service: 'Telecharge', url: 'https://www.telecharge.com' },
-        { service: 'TodayTix', url: 'https://www.todaytix.com' }
-      ],
-      exhibition: [
-        { service: 'Museum Website', url: '#' }
-      ]
-    };
-    return links[type] || [];
-  };
-
-  const sampleFeedItems = [
-    {
-      id: 1,
-      userId: 1,
-      user: 'Sarah Chen',
-      avatar: 'https://api.dicebear.com/9.x/open-peeps/svg?seed=Sarah&backgroundColor=ffd5dc',
-      type: 'music',
-      content: 'Blonde - Frank Ocean',
-      category: 'Album',
-      time: '2m ago',
-      color: 'bg-gradient-to-br from-purple-50 to-pink-50',
-      links: [
-        { service: 'Spotify', url: 'https://open.spotify.com' },
-        { service: 'Apple Music', url: 'https://music.apple.com' }
-      ]
-    },
-    {
-      id: 2,
-      userId: 2,
-      user: 'Marcus Reid',
-      avatar: 'https://api.dicebear.com/9.x/open-peeps/svg?seed=Marcus&backgroundColor=c0aede',
-      type: 'book',
-      content: 'Tomorrow, and Tomorrow, and Tomorrow',
-      category: 'Novel',
-      time: '15m ago',
-      color: 'bg-gradient-to-br from-amber-50 to-yellow-50',
-      links: [
-        { service: 'Audible', url: 'https://www.audible.com' },
-        { service: 'Kindle', url: 'https://www.amazon.com/kindle' }
-      ]
-    },
-    {
-      id: 3,
-      userId: 3,
-      user: 'Emma Walsh',
-      avatar: 'https://api.dicebear.com/9.x/open-peeps/svg?seed=Emma&backgroundColor=ffdfbf',
-      type: 'theatre',
-      content: 'Merrily We Roll Along',
-      category: 'Broadway Musical',
-      time: '45m ago',
-      color: 'bg-gradient-to-br from-rose-50 to-red-50',
-      links: [
-        { service: 'Telecharge', url: 'https://www.telecharge.com' },
-        { service: 'TodayTix', url: 'https://www.todaytix.com' }
-      ]
-    }
-  ];
-
-  const allFeedItems = [...userItems, ...sampleFeedItems];
-
-  const tasteMakers = [
-    { id: 7, name: 'Dev Patel', avatar: 'https://api.dicebear.com/9.x/open-peeps/svg?seed=Dev&backgroundColor=ffdfbf', specialty: 'Film & Music', items: 234 },
-    { id: 8, name: 'Zoe Martinez', avatar: 'https://api.dicebear.com/9.x/open-peeps/svg?seed=Zoe&backgroundColor=c0aede', specialty: 'Books & Podcasts', items: 189 },
-    { id: 9, name: 'Kai Nakamura', avatar: 'https://api.dicebear.com/9.x/open-peeps/svg?seed=Kai&backgroundColor=b6e3f4', specialty: 'Music', items: 412 }
-  ];
+  const allFeedItems = userItems;
 
   const getIcon = (type) => {
     const iconClass = "w-4 h-4";
@@ -250,113 +169,83 @@ export default function App() {
     });
   };
 
-  const toggleFollow = (userId) => {
-    setFollowing(prev => {
-      const newSet = new Set(prev);
-      newSet.has(userId) ? newSet.delete(userId) : newSet.add(userId);
-      return newSet;
-    });
-  };
-
   if (!currentUser) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 flex items-center justify-center p-6">
+      <div className="min-h-screen bg-white flex items-center justify-center p-6">
         <div className="max-w-md w-full">
-          <div className="text-center mb-8">
-            <h1 className="text-5xl font-light tracking-wide text-gray-900 mb-2">umami</h1>
-            <p className="text-sm text-gray-600 font-light">social media for taste, not takes</p>
+          <div className="text-center mb-10">
+            <h1 className="text-4xl tracking-wider text-black mb-2 uppercase">umami</h1>
+            <p className="text-xs text-black/50 tracking-wide">taste, not takes</p>
           </div>
 
-          <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-lg p-8 border border-gray-100">
-            {!emailSent ? (
+          <div className="border border-black/10 p-8">
+            {signUpStep === 'form' ? (
               <>
-                <h2 className="text-lg font-medium text-gray-900 mb-6">Sign in to umami</h2>
-                
-                <button
-                  onClick={signInWithGoogle}
-                  disabled={loading}
-                  className="w-full bg-white border-2 border-gray-200 text-gray-700 py-3 px-4 rounded-lg font-medium hover:bg-gray-50 transition-colors flex items-center justify-center gap-3 mb-4"
-                >
-                  <svg className="w-5 h-5" viewBox="0 0 24 24">
-                    <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                    <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                    <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-                    <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-                  </svg>
-                  Continue with Google
-                </button>
-
-                <div className="relative my-6">
-                  <div className="absolute inset-0 flex items-center">
-                    <div className="w-full border-t border-gray-200"></div>
-                  </div>
-                  <div className="relative flex justify-center text-sm">
-                    <span className="px-4 bg-white/80 text-gray-500">or</span>
-                  </div>
-                </div>
+                <h2 className="text-sm font-bold text-black mb-6 uppercase tracking-wider">Get started</h2>
 
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Email address</label>
+                    <label className="block text-xs font-bold text-black mb-2 uppercase tracking-wider">Name</label>
+                    <input
+                      type="text"
+                      value={signUpName}
+                      onChange={(e) => setSignUpName(e.target.value)}
+                      placeholder="What should we call you?"
+                      className="w-full px-4 py-3 border border-black/20 text-sm focus:border-black outline-none transition-colors"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-black mb-2 uppercase tracking-wider">Email</label>
                     <div className="relative">
-                      <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                      <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-black/30" />
                       <input
                         type="email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        onKeyPress={(e) => e.key === 'Enter' && handleEmailSignIn()}
+                        value={signUpEmail}
+                        onChange={(e) => setSignUpEmail(e.target.value)}
+                        onKeyPress={(e) => e.key === 'Enter' && handleSignUp()}
                         placeholder="you@example.com"
-                        className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent outline-none"
+                        className="w-full pl-10 pr-4 py-3 border border-black/20 text-sm focus:border-black outline-none transition-colors"
                       />
                     </div>
                   </div>
 
                   <button
-                    onClick={handleEmailSignIn}
-                    disabled={loading}
-                    className="w-full bg-gray-900 text-white py-3 rounded-lg font-medium hover:bg-gray-800 transition-colors disabled:opacity-50"
+                    onClick={handleSignUp}
+                    className="w-full bg-black text-white py-3 text-xs font-bold uppercase tracking-wider hover:bg-black/80 transition-colors"
                   >
-                    {loading ? 'Sending...' : 'Send me a sign-in link'}
+                    Next
                   </button>
                 </div>
 
-                <p className="text-xs text-gray-500 mt-4 text-center">
-                  We'll email you a magic link for a password-free sign in
+                <p className="text-xs text-black/30 mt-6 text-center tracking-wide">
+                  No password required
                 </p>
               </>
             ) : (
-              <div className="text-center">
-                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Mail className="w-8 h-8 text-green-600" />
-                </div>
-                <h3 className="text-lg font-medium text-gray-900 mb-2">Check your email</h3>
-                <p className="text-sm text-gray-600 mb-6">
-                  We sent a sign-in link to <strong>{localStorage.getItem('emailForSignIn')}</strong>
-                </p>
-                
-                <div className="bg-blue-50 rounded-lg p-4 mb-6 border border-blue-100">
-                  <p className="text-xs text-blue-900 font-medium mb-2">Demo Mode:</p>
-                  <p className="text-xs text-blue-700 mb-3">In production, click the link in your email. For now:</p>
-                  <button
-                    onClick={completeEmailSignIn}
-                    className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
-                  >
-                    Complete Sign In
-                  </button>
-                </div>
+              <>
+                <button
+                  onClick={() => setSignUpStep('form')}
+                  className="flex items-center gap-1 text-xs text-black/40 hover:text-black uppercase tracking-wider mb-6"
+                >
+                  <ChevronLeft className="w-3.5 h-3.5" />
+                  Back
+                </button>
+
+                <AvatarPicker selected={signUpAvatar} onSelect={setSignUpAvatar} />
 
                 <button
-                  onClick={() => setEmailSent(false)}
-                  className="text-sm text-gray-600 hover:text-gray-900"
+                  onClick={handleCompleteSignUp}
+                  className="w-full bg-black text-white py-3 text-xs font-bold uppercase tracking-wider hover:bg-black/80 transition-colors mt-6"
                 >
-                  Use a different email
+                  Create account
                 </button>
-              </div>
+              </>
             )}
           </div>
 
-          <p className="text-center text-xs text-gray-500 mt-6">
-            Beta v1.0 • No passwords required
+          <p className="text-center text-xs text-black/20 mt-8 tracking-wider uppercase">
+            Beta v1.0
           </p>
         </div>
       </div>
@@ -364,70 +253,80 @@ export default function App() {
   }
 
   return (
-    <div className="max-w-md mx-auto bg-white min-h-screen relative">
-      <div className="sticky top-0 bg-white/80 backdrop-blur-md border-b border-gray-100 px-6 py-5 z-10">
+    <div className="max-w-2xl mx-auto bg-white min-h-screen relative sm:border-x sm:border-black/5">
+      <div className="sticky top-0 bg-white border-b border-black/10 px-4 sm:px-6 py-4 sm:py-5 z-10">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-light tracking-wide text-gray-900">umami</h1>
-            <p className="text-xs text-gray-500 mt-1 font-light">what your friends are into right now</p>
+            <h1 className="text-lg tracking-widest text-black uppercase">umami</h1>
+            <p className="text-xs text-black/30 mt-0.5 tracking-wide">what you're into right now</p>
           </div>
           <button
             onClick={handleLogout}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
+            className="text-black/30 hover:text-black transition-colors"
             title="Log out"
           >
-            <LogOut className="w-5 h-5" />
+            <LogOut className="w-4 h-4" />
           </button>
         </div>
       </div>
 
-      <div className="pb-20">
+      <div className="pb-24">
+        {activeTab === 'feed' && allFeedItems.length === 0 && (
+          <div className="text-center py-20 px-4 sm:px-6">
+            <Plus className="w-8 h-8 text-black/20 mx-auto mb-4" />
+            <p className="text-sm text-black font-bold uppercase tracking-wider mb-1">Empty</p>
+            <p className="text-xs text-black/40 mb-8 tracking-wide">Share what you're into</p>
+            <button
+              onClick={() => setShowAddModal(true)}
+              className="bg-black text-white px-6 py-2.5 text-xs font-bold uppercase tracking-wider hover:bg-black/80 transition-colors"
+            >
+              Add your first pick
+            </button>
+          </div>
+        )}
         {activeTab === 'feed' && allFeedItems.map((item) => (
-          <div key={item.id} className={`${item.color} border-b border-gray-50 p-6`}>
-            <div className="flex items-start justify-between mb-4">
+          <div key={item.id} className="border-b border-black/5 p-4 sm:p-6">
+            <div className="flex items-start justify-between mb-3">
               <div className="flex items-center gap-3">
-                <img 
-                  src={item.avatar} 
+                <img
+                  src={item.avatar}
                   alt={item.user}
-                  className="w-10 h-10 rounded-full"
+                  className="w-8 h-8 rounded-full border border-black/10"
                 />
                 <div>
-                  <p className="font-medium text-gray-900 text-sm">{item.user}</p>
-                  <p className="text-xs text-gray-400 mt-0.5">{item.time}</p>
+                  <p className="text-xs font-bold text-black uppercase tracking-wider">{item.user}</p>
+                  <p className="text-xs text-black/30 mt-0.5">{item.time}</p>
                 </div>
               </div>
-              <div className="text-gray-400">
+              <div className="text-black/20">
                 {getIcon(item.type)}
               </div>
             </div>
-            
-            <div className="ml-13">
-              <p className="text-base font-medium text-gray-900 mb-0.5 leading-snug">{item.content}</p>
-              <p className="text-xs text-gray-500 mb-4 font-light">{item.category}</p>
-              
-              <div className="flex flex-wrap gap-1.5 mb-4">
-                {item.links.map((link, idx) => (
-                  <a
-                    key={idx}
-                    href={link.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-gray-500 text-xs px-2 py-1 rounded flex items-center gap-1 hover:text-gray-700 hover:bg-white/50 transition-colors"
-                  >
-                    {link.service}
-                    <ExternalLink className="w-2.5 h-2.5" />
-                  </a>
-                ))}
+
+            <div className="ml-11">
+              <p className="text-sm text-black mb-0.5">{item.content}</p>
+              <p className="text-xs text-black/40 mb-4 tracking-wide">{item.category}</p>
+
+              <div className="mb-4">
+                <a
+                  href={item.wikiUrl || `https://en.wikipedia.org/wiki/Special:Search?search=${encodeURIComponent(item.content)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-black/30 text-xs tracking-wide uppercase flex items-center gap-1 hover:text-black transition-colors"
+                >
+                  Wikipedia
+                  <ExternalLink className="w-2.5 h-2.5" />
+                </a>
               </div>
-              
+
               <button
                 onClick={() => toggleLike(item.id)}
-                className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-red-400 transition-colors"
+                className="flex items-center gap-1.5 text-xs text-black/30 hover:text-black transition-colors"
               >
-                <Heart 
-                  className={`w-3.5 h-3.5 ${likedItems.has(item.id) ? 'fill-red-400 text-red-400' : ''}`}
+                <Heart
+                  className={`w-3.5 h-3.5 ${likedItems.has(item.id) ? 'fill-black text-black' : ''}`}
                 />
-                <span className={likedItems.has(item.id) ? 'text-red-400' : ''}>
+                <span className={likedItems.has(item.id) ? 'text-black' : ''}>
                   {likedItems.has(item.id) ? 'Saved' : 'Save'}
                 </span>
               </button>
@@ -436,57 +335,31 @@ export default function App() {
         ))}
 
         {activeTab === 'discover' && (
-          <div className="p-6">
-            <h2 className="text-lg font-medium text-gray-900 mb-1">Taste Makers</h2>
-            <p className="text-xs text-gray-500 mb-6 font-light">people with consistently great taste</p>
-            
-            <div className="space-y-3">
-              {tasteMakers.map((maker) => (
-                <div key={maker.id} className="bg-gray-50/50 rounded-xl p-4 flex items-center justify-between border border-gray-100">
-                  <div className="flex items-center gap-3">
-                    <img 
-                      src={maker.avatar} 
-                      alt={maker.name}
-                      className="w-12 h-12 rounded-full"
-                    />
-                    <div>
-                      <p className="font-medium text-gray-900 text-sm">{maker.name}</p>
-                      <p className="text-xs text-gray-600 font-light">{maker.specialty}</p>
-                      <p className="text-xs text-gray-400 mt-0.5">{maker.items} items</p>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => toggleFollow(maker.id)}
-                    className={`px-4 py-1.5 rounded-full text-xs font-medium transition-colors ${
-                      following.has(maker.id)
-                        ? 'bg-gray-200 text-gray-600 hover:bg-gray-300'
-                        : 'bg-gray-900 text-white hover:bg-gray-800'
-                    }`}
-                  >
-                    {following.has(maker.id) ? 'Following' : 'Follow'}
-                  </button>
-                </div>
-              ))}
+          <div className="p-4 sm:p-6">
+            <h2 className="text-sm font-bold text-black uppercase tracking-wider mb-1">Discover</h2>
+            <p className="text-xs text-black/30 mb-8 tracking-wide">find people with great taste</p>
+            <div className="text-center py-12">
+              <Compass className="w-8 h-8 text-black/15 mx-auto mb-4" />
+              <p className="text-xs text-black/30 uppercase tracking-wider">Coming soon</p>
             </div>
           </div>
         )}
 
         {activeTab === 'saved' && (
-          <div className="p-6">
-            <h2 className="text-lg font-medium text-gray-900 mb-1">Saved Items</h2>
-            <p className="text-xs text-gray-500 mb-6 font-light">things you want to check out</p>
+          <div className="p-4 sm:p-6">
+            <h2 className="text-sm font-bold text-black uppercase tracking-wider mb-1">Saved</h2>
+            <p className="text-xs text-black/30 mb-8 tracking-wide">things to check out</p>
             {likedItems.size === 0 ? (
               <div className="text-center py-12">
-                <Heart className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-                <p className="text-gray-500">No saved items yet</p>
-                <p className="text-xs text-gray-400 mt-2">Tap the heart on items to save them</p>
+                <Heart className="w-8 h-8 text-black/15 mx-auto mb-4" />
+                <p className="text-xs text-black/30 uppercase tracking-wider">Nothing saved yet</p>
               </div>
             ) : (
               <div className="space-y-2">
                 {allFeedItems.filter(item => likedItems.has(item.id)).map(item => (
-                  <div key={item.id} className="bg-gray-50 rounded-lg p-4">
-                    <p className="font-medium text-sm">{item.content}</p>
-                    <p className="text-xs text-gray-500 mt-1">{item.category}</p>
+                  <div key={item.id} className="border border-black/5 p-4">
+                    <p className="text-sm text-black">{item.content}</p>
+                    <p className="text-xs text-black/30 mt-1 tracking-wide">{item.category}</p>
                   </div>
                 ))}
               </div>
@@ -495,95 +368,109 @@ export default function App() {
         )}
 
         {activeTab === 'profile' && (
-          <div className="p-6">
-            <div className="text-center mb-8">
-              <img 
+          <div className="p-4 sm:p-6">
+            <div className="text-center mb-10">
+              <img
                 src={currentUser.avatar}
                 alt={currentUser.name}
-                className="w-24 h-24 rounded-full mx-auto mb-4"
+                className="w-20 h-20 rounded-full mx-auto mb-4 border border-black/10"
               />
-              <h2 className="text-xl font-medium text-gray-900">{currentUser.name}</h2>
-              <p className="text-sm text-gray-500 mt-1">{currentUser.email}</p>
+              <h2 className="text-sm font-bold text-black uppercase tracking-wider">{currentUser.name}</h2>
+              <p className="text-xs text-black/30 mt-1">{currentUser.email}</p>
+              <button
+                onClick={() => setShowAvatarPicker(!showAvatarPicker)}
+                className="text-xs text-black/40 hover:text-black uppercase tracking-wider mt-3"
+              >
+                {showAvatarPicker ? 'Close' : 'Change avatar'}
+              </button>
             </div>
 
-            <div className="space-y-3">
-              <div className="bg-gray-50 rounded-lg p-4">
-                <p className="text-sm text-gray-600">Items shared</p>
-                <p className="text-2xl font-medium text-gray-900 mt-1">{userItems.length}</p>
+            {showAvatarPicker && (
+              <div className="border border-black/10 p-4 mb-6">
+                <AvatarPicker
+                  selected={currentUser.avatar}
+                  onSelect={(avatar) => {
+                    updateAvatar(avatar);
+                    setShowAvatarPicker(false);
+                  }}
+                />
               </div>
-              <div className="bg-gray-50 rounded-lg p-4">
-                <p className="text-sm text-gray-600">Following</p>
-                <p className="text-2xl font-medium text-gray-900 mt-1">{following.size}</p>
+            )}
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="border border-black/5 p-4 text-center">
+                <p className="text-2xl font-bold text-black">{userItems.length}</p>
+                <p className="text-xs text-black/30 mt-1 uppercase tracking-wider">Shared</p>
               </div>
-              <div className="bg-gray-50 rounded-lg p-4">
-                <p className="text-sm text-gray-600">Saved items</p>
-                <p className="text-2xl font-medium text-gray-900 mt-1">{likedItems.size}</p>
+              <div className="border border-black/5 p-4 text-center">
+                <p className="text-2xl font-bold text-black">{likedItems.size}</p>
+                <p className="text-xs text-black/30 mt-1 uppercase tracking-wider">Saved</p>
               </div>
             </div>
           </div>
         )}
       </div>
 
-      <div className="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-white/80 backdrop-blur-md border-t border-gray-100">
-        <div className="flex justify-around items-center px-6 py-3">
+      <div className="fixed bottom-0 left-0 right-0 max-w-2xl mx-auto bg-white border-t border-black/10">
+        <div className="flex justify-around items-center px-4 sm:px-6 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
           <button
             onClick={() => setActiveTab('feed')}
-            className={`flex flex-col items-center gap-1 transition-colors ${activeTab === 'feed' ? 'text-gray-900' : 'text-gray-400'}`}
+            className={`flex flex-col items-center gap-1 transition-colors ${activeTab === 'feed' ? 'text-black' : 'text-black/20'}`}
           >
             <Home className="w-5 h-5" />
-            <span className="text-xs font-light">Feed</span>
+            <span className="text-xs tracking-wider uppercase">Feed</span>
           </button>
-          
+
           <button
             onClick={() => setActiveTab('discover')}
-            className={`flex flex-col items-center gap-1 transition-colors ${activeTab === 'discover' ? 'text-gray-900' : 'text-gray-400'}`}
+            className={`flex flex-col items-center gap-1 transition-colors ${activeTab === 'discover' ? 'text-black' : 'text-black/20'}`}
           >
             <Compass className="w-5 h-5" />
-            <span className="text-xs font-light">Discover</span>
+            <span className="text-xs tracking-wider uppercase">Discover</span>
           </button>
-          
-          <button 
+
+          <button
             onClick={() => setShowAddModal(true)}
-            className="bg-gray-900 text-white rounded-full p-3 -mt-6 shadow-lg hover:bg-gray-800 transition-colors"
+            className="bg-black text-white rounded-full p-3 -mt-6 shadow-lg hover:bg-black/80 transition-colors"
           >
             <Plus className="w-5 h-5" />
           </button>
-          
+
           <button
             onClick={() => setActiveTab('saved')}
-            className={`flex flex-col items-center gap-1 transition-colors ${activeTab === 'saved' ? 'text-gray-900' : 'text-gray-400'}`}
+            className={`flex flex-col items-center gap-1 transition-colors ${activeTab === 'saved' ? 'text-black' : 'text-black/20'}`}
           >
             <Heart className="w-5 h-5" />
-            <span className="text-xs font-light">Saved</span>
+            <span className="text-xs tracking-wider uppercase">Saved</span>
           </button>
-          
+
           <button
             onClick={() => setActiveTab('profile')}
-            className={`flex flex-col items-center gap-1 transition-colors ${activeTab === 'profile' ? 'text-gray-900' : 'text-gray-400'}`}
+            className={`flex flex-col items-center gap-1 transition-colors ${activeTab === 'profile' ? 'text-black' : 'text-black/20'}`}
           >
             <User className="w-5 h-5" />
-            <span className="text-xs font-light">Profile</span>
+            <span className="text-xs tracking-wider uppercase">Profile</span>
           </button>
         </div>
       </div>
 
       {showAddModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-end justify-center z-50">
-          <div className="bg-white rounded-t-3xl w-full max-w-md p-6">
+        <div className="fixed inset-0 bg-black/50 flex items-end sm:items-center justify-center z-50">
+          <div className="bg-white rounded-t-2xl sm:rounded-lg w-full max-w-lg p-4 sm:p-6 sm:mx-4">
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-medium">Share what you're into</h3>
-              <button onClick={() => setShowAddModal(false)} className="text-gray-400 hover:text-gray-600">
-                <Plus className="w-6 h-6 rotate-45" />
+              <h3 className="text-sm font-bold uppercase tracking-wider">Share a pick</h3>
+              <button onClick={() => setShowAddModal(false)} className="text-black/30 hover:text-black">
+                <Plus className="w-5 h-5 rotate-45" />
               </button>
             </div>
 
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Type</label>
+                <label className="block text-xs font-bold text-black mb-2 uppercase tracking-wider">Type</label>
                 <select
                   value={newItem.type}
-                  onChange={(e) => setNewItem({ ...newItem, type: e.target.value })}
-                  className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent outline-none"
+                  onChange={(e) => setNewItem({ ...newItem, type: e.target.value, category: '' })}
+                  className="w-full px-4 py-3 border border-black/20 text-sm focus:border-black outline-none transition-colors"
                 >
                   <option value="music">Music</option>
                   <option value="book">Book</option>
@@ -595,32 +482,35 @@ export default function App() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Title</label>
+                <label className="block text-xs font-bold text-black mb-2 uppercase tracking-wider">Title</label>
                 <input
                   type="text"
                   value={newItem.content}
                   onChange={(e) => setNewItem({ ...newItem, content: e.target.value })}
                   placeholder="e.g., Blonde - Frank Ocean"
-                  className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent outline-none"
+                  className="w-full px-4 py-3 border border-black/20 text-sm focus:border-black outline-none transition-colors"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
-                <input
-                  type="text"
+                <label className="block text-xs font-bold text-black mb-2 uppercase tracking-wider">Category</label>
+                <select
                   value={newItem.category}
                   onChange={(e) => setNewItem({ ...newItem, category: e.target.value })}
-                  placeholder="e.g., Album, Novel, TV Series"
-                  className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent outline-none"
-                />
+                  className="w-full px-4 py-3 border border-black/20 text-sm focus:border-black outline-none transition-colors"
+                >
+                  <option value="">Select a category</option>
+                  {(categoryOptions[newItem.type] || []).map((cat) => (
+                    <option key={cat} value={cat}>{cat}</option>
+                  ))}
+                </select>
               </div>
 
               <button
                 onClick={handleAddItem}
-                className="w-full bg-gray-900 text-white py-3 rounded-lg font-medium hover:bg-gray-800 transition-colors flex items-center justify-center gap-2"
+                className="w-full bg-black text-white py-3 text-xs font-bold uppercase tracking-wider hover:bg-black/80 transition-colors flex items-center justify-center gap-2"
               >
-                <Send className="w-4 h-4" />
+                <Send className="w-3.5 h-3.5" />
                 Share
               </button>
             </div>
