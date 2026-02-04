@@ -130,7 +130,7 @@ export default function App() {
     return saved ? new Set(JSON.parse(saved)) : new Set();
   });
   const [showAddModal, setShowAddModal] = useState(false);
-  const [newItem, setNewItem] = useState({ type: 'music', content: '', category: '' });
+  const [newItem, setNewItem] = useState({ type: 'music', content: '', category: '', link: '' });
   const [userItems, setUserItems] = useState(() => {
     const saved = localStorage.getItem('umamiItems');
     return saved ? JSON.parse(saved) : [];
@@ -215,18 +215,19 @@ export default function App() {
       content: newItem.content,
       category: newItem.category,
       time: 'Just now',
-      wikiUrl: `https://en.wikipedia.org/wiki/Special:Search?search=${encodeURIComponent(newItem.content)}`
+      wikiUrl: `https://en.wikipedia.org/wiki/Special:Search?search=${encodeURIComponent(newItem.content)}`,
+      mediaUrl: newItem.link.trim() || null
     };
 
     setUserItems([item, ...userItems]);
     setShowAddModal(false);
-    setNewItem({ type: 'music', content: '', category: '' });
+    setNewItem({ type: 'music', content: '', category: '', link: '' });
   };
 
   const categoryOptions = {
-    music: ['Album', 'Single', 'EP', 'Mixtape', 'Soundtrack', 'Live Album', 'DJ Mix', 'Radio Show'],
-    book: ['Novel', 'Non-Fiction', 'Poetry', 'Memoir', 'Short Stories', 'Graphic Novel'],
-    tv: ['TV Series', 'Film', 'Documentary', 'Mini-Series', 'Anime', 'Short Film'],
+    music: ['Album', 'Single', 'EP', 'Mixtape', 'Soundtrack', 'Live Album', 'DJ Mix', 'Radio Show', 'Artist'],
+    book: ['Novel', 'Non-Fiction', 'Poetry', 'Memoir', 'Short Stories', 'Graphic Novel', 'Author'],
+    tv: ['TV Series', 'Film', 'Documentary', 'Mini-Series', 'Anime', 'Short Film', 'Actor', 'Director'],
     podcast: ['Interview', 'Narrative', 'Comedy', 'True Crime', 'Educational', 'News'],
     theatre: ['Musical', 'Play', 'Opera', 'Ballet', 'Comedy', 'One-Person Show'],
     exhibition: ['Art', 'Photography', 'History', 'Science', 'Design', 'Mixed Media']
@@ -409,7 +410,7 @@ export default function App() {
               <p className="text-sm text-black mb-0.5">{item.content}</p>
               <p className="text-xs text-black/40 mb-4 tracking-wide">{item.category}</p>
 
-              <div className="mb-4">
+              <div className="mb-4 flex items-center gap-3">
                 <a
                   href={item.wikiUrl || `https://en.wikipedia.org/wiki/Special:Search?search=${encodeURIComponent(item.content)}`}
                   target="_blank"
@@ -419,6 +420,23 @@ export default function App() {
                   Wikipedia
                   <ExternalLink className="w-2.5 h-2.5" />
                 </a>
+                {item.mediaUrl && (
+                  <a
+                    href={item.mediaUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-black/30 text-xs tracking-wide uppercase flex items-center gap-1 hover:text-black transition-colors"
+                  >
+                    {(() => {
+                      try {
+                        const host = new URL(item.mediaUrl).hostname.replace('www.', '');
+                        const name = host.split('.')[0];
+                        return name.charAt(0).toUpperCase() + name.slice(1);
+                      } catch { return 'Link'; }
+                    })()}
+                    <ExternalLink className="w-2.5 h-2.5" />
+                  </a>
+                )}
               </div>
 
               <button
@@ -656,6 +674,17 @@ export default function App() {
                     <option key={cat} value={cat}>{cat}</option>
                   ))}
                 </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-black mb-2 uppercase tracking-wider">Link <span className="font-normal text-black/30">(optional)</span></label>
+                <input
+                  type="url"
+                  value={newItem.link}
+                  onChange={(e) => setNewItem({ ...newItem, link: e.target.value })}
+                  placeholder="e.g., https://open.spotify.com/..."
+                  className="w-full px-4 py-3 border border-black/20 text-sm focus:border-black outline-none transition-colors"
+                />
               </div>
 
               <button
