@@ -138,7 +138,7 @@ export default function App() {
       content: newItem.content,
       category: newItem.category,
       time: 'Just now',
-      links: getDefaultLinksForType(newItem.type)
+      wikiUrl: `https://en.wikipedia.org/wiki/Special:Search?search=${encodeURIComponent(newItem.content)}`
     };
 
     setUserItems([item, ...userItems]);
@@ -146,33 +146,13 @@ export default function App() {
     setNewItem({ type: 'music', content: '', category: '' });
   };
 
-  const getDefaultLinksForType = (type) => {
-    const links = {
-      music: [
-        { service: 'Spotify', url: 'https://open.spotify.com' },
-        { service: 'Apple Music', url: 'https://music.apple.com' }
-      ],
-      book: [
-        { service: 'Audible', url: 'https://www.audible.com' },
-        { service: 'Kindle', url: 'https://www.amazon.com/kindle' }
-      ],
-      tv: [
-        { service: 'Netflix', url: 'https://www.netflix.com' },
-        { service: 'Hulu', url: 'https://www.hulu.com' }
-      ],
-      podcast: [
-        { service: 'Spotify', url: 'https://open.spotify.com' },
-        { service: 'Apple Podcasts', url: 'https://podcasts.apple.com' }
-      ],
-      theatre: [
-        { service: 'Telecharge', url: 'https://www.telecharge.com' },
-        { service: 'TodayTix', url: 'https://www.todaytix.com' }
-      ],
-      exhibition: [
-        { service: 'Museum Website', url: '#' }
-      ]
-    };
-    return links[type] || [];
+  const categoryOptions = {
+    music: ['Album', 'Single', 'EP', 'Mixtape', 'Soundtrack', 'Live Album'],
+    book: ['Novel', 'Non-Fiction', 'Poetry', 'Memoir', 'Short Stories', 'Graphic Novel'],
+    tv: ['TV Series', 'Film', 'Documentary', 'Mini-Series', 'Anime', 'Short Film'],
+    podcast: ['Interview', 'Narrative', 'Comedy', 'True Crime', 'Educational', 'News'],
+    theatre: ['Musical', 'Play', 'Opera', 'Ballet', 'Comedy', 'One-Person Show'],
+    exhibition: ['Art', 'Photography', 'History', 'Science', 'Design', 'Mixed Media']
   };
 
   const allFeedItems = userItems;
@@ -349,19 +329,16 @@ export default function App() {
               <p className="text-sm text-black mb-0.5">{item.content}</p>
               <p className="text-xs text-black/40 mb-4 tracking-wide">{item.category}</p>
 
-              <div className="flex flex-wrap gap-2 mb-4">
-                {item.links.map((link, idx) => (
-                  <a
-                    key={idx}
-                    href={link.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-black/30 text-xs tracking-wide uppercase flex items-center gap-1 hover:text-black transition-colors"
-                  >
-                    {link.service}
-                    <ExternalLink className="w-2.5 h-2.5" />
-                  </a>
-                ))}
+              <div className="mb-4">
+                <a
+                  href={item.wikiUrl || `https://en.wikipedia.org/wiki/Special:Search?search=${encodeURIComponent(item.content)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-black/30 text-xs tracking-wide uppercase flex items-center gap-1 hover:text-black transition-colors"
+                >
+                  Wikipedia
+                  <ExternalLink className="w-2.5 h-2.5" />
+                </a>
               </div>
 
               <button
@@ -496,7 +473,7 @@ export default function App() {
                 <label className="block text-xs font-bold text-black mb-2 uppercase tracking-wider">Type</label>
                 <select
                   value={newItem.type}
-                  onChange={(e) => setNewItem({ ...newItem, type: e.target.value })}
+                  onChange={(e) => setNewItem({ ...newItem, type: e.target.value, category: '' })}
                   className="w-full px-4 py-3 border border-black/20 text-sm focus:border-black outline-none transition-colors"
                 >
                   <option value="music">Music</option>
@@ -521,13 +498,16 @@ export default function App() {
 
               <div>
                 <label className="block text-xs font-bold text-black mb-2 uppercase tracking-wider">Category</label>
-                <input
-                  type="text"
+                <select
                   value={newItem.category}
                   onChange={(e) => setNewItem({ ...newItem, category: e.target.value })}
-                  placeholder="e.g., Album, Novel, TV Series"
                   className="w-full px-4 py-3 border border-black/20 text-sm focus:border-black outline-none transition-colors"
-                />
+                >
+                  <option value="">Select a category</option>
+                  {(categoryOptions[newItem.type] || []).map((cat) => (
+                    <option key={cat} value={cat}>{cat}</option>
+                  ))}
+                </select>
               </div>
 
               <button
