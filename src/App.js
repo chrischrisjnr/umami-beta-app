@@ -1,5 +1,32 @@
-import React, { useState, useEffect } from 'react';
-import { Play, Book, Headphones, Tv, Heart, Plus, User, Home, Compass, ExternalLink, Ticket, Palette, Mail, LogOut, Send, ChevronLeft } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Play, Book, Headphones, Tv, Heart, Plus, User, Home, Compass, ExternalLink, Ticket, Palette, Mail, LogOut, Send, ChevronLeft, Copy, Check } from 'lucide-react';
+
+const generateCode = () => {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let code = '';
+  for (let i = 0; i < 8; i++) code += chars[Math.floor(Math.random() * chars.length)];
+  return code.slice(0, 4) + '-' + code.slice(4);
+};
+
+const MAX_INVITES = 2;
+
+const getInvites = () => {
+  const saved = localStorage.getItem('umamiInvites');
+  return saved ? JSON.parse(saved) : [];
+};
+
+const saveInvites = (invites) => {
+  localStorage.setItem('umamiInvites', JSON.stringify(invites));
+};
+
+const getMembers = () => {
+  const saved = localStorage.getItem('umamiMembers');
+  return saved ? JSON.parse(saved) : [];
+};
+
+const saveMembers = (members) => {
+  localStorage.setItem('umamiMembers', JSON.stringify(members));
+};
 
 const AVATAR_SEEDS = [
   'Felix', 'Aneka', 'Jade', 'Milo', 'Sasha', 'Ravi', 'Luna', 'Kai',
@@ -41,13 +68,33 @@ const useAuth = () => {
     }
   }, []);
 
-  const createAccount = ({ name, email, avatar }) => {
+  const createAccount = ({ name, email, avatar, inviteCode }) => {
+    const members = getMembers();
+    const isAdmin = members.length === 0;
+
     const newUser = {
       id: Date.now(),
       email,
       name,
-      avatar
+      avatar,
+      isAdmin,
+      invitedBy: inviteCode || null
     };
+
+    // Mark invite as used
+    if (inviteCode) {
+      const invites = getInvites();
+      const idx = invites.findIndex(i => i.code === inviteCode && !i.used);
+      if (idx !== -1) {
+        invites[idx].used = true;
+        invites[idx].usedBy = email;
+        saveInvites(invites);
+      }
+    }
+
+    members.push({ id: newUser.id, email, name, isAdmin });
+    saveMembers(members);
+
     setCurrentUser(newUser);
     localStorage.setItem('umamiUser', JSON.stringify(newUser));
   };
@@ -71,9 +118,13 @@ export default function App() {
   const [signUpStep, setSignUpStep] = useState('form'); // 'form' | 'avatar'
   const [signUpName, setSignUpName] = useState('');
   const [signUpEmail, setSignUpEmail] = useState('');
+  const [signUpInviteCode, setSignUpInviteCode] = useState('');
   const [signUpAvatar, setSignUpAvatar] = useState(getAvatarUrl(AVATAR_SEEDS[0]));
+  const isFirstUser = getMembers().length === 0;
   const [activeTab, setActiveTab] = useState('feed');
   const [showAvatarPicker, setShowAvatarPicker] = useState(false);
+  const [copiedCode, setCopiedCode] = useState(null);
+  const [invites, setInvites] = useState(getInvites);
   const [likedItems, setLikedItems] = useState(() => {
     const saved = localStorage.getItem('umamiLikedItems');
     return saved ? new Set(JSON.parse(saved)) : new Set();
@@ -98,14 +149,49 @@ export default function App() {
       alert('Please enter your name and a valid email');
       return;
     }
+    if (!isFirstUser) {
+      const code = signUpInviteCode.trim().toUpperCase();
+      const invites = getInvites();
+      const valid = invites.find(i => i.code === code && !i.used);
+      if (!valid) {
+        alert('Invalid or already used invite code');
+        return;
+      }
+    }
     setSignUpStep('avatar');
   };
 
   const handleCompleteSignUp = () => {
-    createAccount({ name: signUpName, email: signUpEmail, avatar: signUpAvatar });
+    createAccount({
+      name: signUpName,
+      email: signUpEmail,
+      avatar: signUpAvatar,
+      inviteCode: signUpInviteCode.trim().toUpperCase() || null
+    });
     setSignUpStep('form');
     setSignUpName('');
     setSignUpEmail('');
+    setSignUpInviteCode('');
+  };
+
+  const myInvites = currentUser ? invites.filter(i => i.createdBy === currentUser.id) : [];
+  const invitesRemaining = currentUser?.isAdmin ? Infinity : MAX_INVITES - myInvites.length;
+
+  const handleCreateInvite = useCallback(() => {
+    if (!currentUser) return;
+    if (!currentUser.isAdmin && myInvites.length >= MAX_INVITES) return;
+    const code = generateCode();
+    const newInvite = { code, createdBy: currentUser.id, used: false, usedBy: null };
+    const updated = [...invites, newInvite];
+    saveInvites(updated);
+    setInvites(updated);
+  }, [currentUser, invites, myInvites.length]);
+
+  const handleCopyCode = (code) => {
+    navigator.clipboard.writeText(code).then(() => {
+      setCopiedCode(code);
+      setTimeout(() => setCopiedCode(null), 2000);
+    });
   };
 
   const handleLogout = () => {
@@ -181,9 +267,25 @@ export default function App() {
           <div className="border border-black/10 p-8">
             {signUpStep === 'form' ? (
               <>
-                <h2 className="text-sm font-bold text-black mb-6 uppercase tracking-wider">Get started</h2>
+                <h2 className="text-sm font-bold text-black mb-6 uppercase tracking-wider">
+                  {isFirstUser ? 'Create your network' : 'Join umami'}
+                </h2>
 
                 <div className="space-y-4">
+                  {!isFirstUser && (
+                    <div>
+                      <label className="block text-xs font-bold text-black mb-2 uppercase tracking-wider">Invite code</label>
+                      <input
+                        type="text"
+                        value={signUpInviteCode}
+                        onChange={(e) => setSignUpInviteCode(e.target.value.toUpperCase())}
+                        placeholder="XXXX-XXXX"
+                        maxLength={9}
+                        className="w-full px-4 py-3 border border-black/20 text-sm focus:border-black outline-none transition-colors tracking-widest text-center uppercase"
+                      />
+                    </div>
+                  )}
+
                   <div>
                     <label className="block text-xs font-bold text-black mb-2 uppercase tracking-wider">Name</label>
                     <input
@@ -219,7 +321,7 @@ export default function App() {
                 </div>
 
                 <p className="text-xs text-black/30 mt-6 text-center tracking-wide">
-                  No password required
+                  {isFirstUser ? 'You\'ll be the admin' : 'Invite only — no password required'}
                 </p>
               </>
             ) : (
@@ -396,6 +498,56 @@ export default function App() {
                 />
               </div>
             )}
+
+            <div className="border border-black/10 p-4 mb-6">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <p className="text-xs font-bold text-black uppercase tracking-wider">Invites</p>
+                  <p className="text-xs text-black/30 mt-0.5">
+                    {currentUser.isAdmin ? 'Unlimited (admin)' : `${Math.max(0, invitesRemaining)} remaining`}
+                  </p>
+                </div>
+                {(currentUser.isAdmin || invitesRemaining > 0) && (
+                  <button
+                    onClick={handleCreateInvite}
+                    className="text-xs bg-black text-white px-3 py-1.5 uppercase tracking-wider hover:bg-black/80 transition-colors"
+                  >
+                    Generate
+                  </button>
+                )}
+              </div>
+
+              {myInvites.length === 0 ? (
+                <p className="text-xs text-black/30 text-center py-4">No invite codes yet</p>
+              ) : (
+                <div className="space-y-2">
+                  {myInvites.map((inv) => (
+                    <div key={inv.code} className="flex items-center justify-between py-2 border-t border-black/5">
+                      <div>
+                        <p className={`text-sm tracking-widest ${inv.used ? 'text-black/20 line-through' : 'text-black'}`}>
+                          {inv.code}
+                        </p>
+                        {inv.used && (
+                          <p className="text-xs text-black/20 mt-0.5">Used by {inv.usedBy}</p>
+                        )}
+                      </div>
+                      {!inv.used && (
+                        <button
+                          onClick={() => handleCopyCode(inv.code)}
+                          className="text-black/30 hover:text-black transition-colors p-1"
+                          title="Copy code"
+                        >
+                          {copiedCode === inv.code
+                            ? <Check className="w-4 h-4" />
+                            : <Copy className="w-4 h-4" />
+                          }
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
 
             <div className="grid grid-cols-2 gap-3">
               <div className="border border-black/5 p-4 text-center">
