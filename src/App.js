@@ -8,6 +8,7 @@ const generateCode = () => {
   return code.slice(0, 4) + '-' + code.slice(4);
 };
 
+const ADMIN_EMAIL = 'christophercostuna@gmail.com';
 const MAX_INVITES = 2;
 
 const getInvites = () => {
@@ -70,7 +71,7 @@ const useAuth = () => {
 
   const createAccount = ({ name, email, avatar, inviteCode }) => {
     const members = getMembers();
-    const isAdmin = members.length === 0;
+    const isAdmin = members.length === 0 || email.toLowerCase() === ADMIN_EMAIL;
 
     const newUser = {
       id: Date.now(),
@@ -149,7 +150,7 @@ export default function App() {
       alert('Please enter your name and a valid email');
       return;
     }
-    if (!isFirstUser) {
+    if (!isFirstUser && signUpEmail.toLowerCase() !== ADMIN_EMAIL) {
       const code = signUpInviteCode.trim().toUpperCase();
       const invites = getInvites();
       const valid = invites.find(i => i.code === code && !i.used);
@@ -273,20 +274,6 @@ export default function App() {
                 </h2>
 
                 <div className="space-y-4">
-                  {!isFirstUser && (
-                    <div>
-                      <label className="block text-xs font-bold text-black mb-2 uppercase tracking-wider">Invite code</label>
-                      <input
-                        type="text"
-                        value={signUpInviteCode}
-                        onChange={(e) => setSignUpInviteCode(e.target.value.toUpperCase())}
-                        placeholder="XXXX-XXXX"
-                        maxLength={9}
-                        className="w-full px-4 py-3 border border-black/20 text-sm focus:border-black outline-none transition-colors tracking-widest text-center uppercase"
-                      />
-                    </div>
-                  )}
-
                   <div>
                     <label className="block text-xs font-bold text-black mb-2 uppercase tracking-wider">Name</label>
                     <input
@@ -313,6 +300,20 @@ export default function App() {
                     </div>
                   </div>
 
+                  {!isFirstUser && signUpEmail.toLowerCase() !== ADMIN_EMAIL && (
+                    <div>
+                      <label className="block text-xs font-bold text-black mb-2 uppercase tracking-wider">Invite code</label>
+                      <input
+                        type="text"
+                        value={signUpInviteCode}
+                        onChange={(e) => setSignUpInviteCode(e.target.value.toUpperCase())}
+                        placeholder="XXXX-XXXX"
+                        maxLength={9}
+                        className="w-full px-4 py-3 border border-black/20 text-sm focus:border-black outline-none transition-colors tracking-widest text-center uppercase"
+                      />
+                    </div>
+                  )}
+
                   <button
                     onClick={handleSignUp}
                     className="w-full bg-black text-white py-3 text-xs font-bold uppercase tracking-wider hover:bg-black/80 transition-colors"
@@ -322,7 +323,7 @@ export default function App() {
                 </div>
 
                 <p className="text-xs text-black/30 mt-6 text-center tracking-wide">
-                  {isFirstUser ? 'You\'ll be the admin' : 'Invite only — no password required'}
+                  {isFirstUser ? 'You\'ll be the admin' : signUpEmail.toLowerCase() === ADMIN_EMAIL ? 'Welcome back, admin' : 'Invite only — no password required'}
                 </p>
               </>
             ) : (
