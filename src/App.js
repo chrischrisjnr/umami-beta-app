@@ -1,10 +1,38 @@
 import React, { useState, useEffect } from 'react';
-import { Play, Book, Headphones, Tv, Heart, Plus, User, Home, Compass, ExternalLink, Ticket, Palette, Mail, LogOut, Send } from 'lucide-react';
+import { Play, Book, Headphones, Tv, Heart, Plus, User, Home, Compass, ExternalLink, Ticket, Palette, Mail, LogOut, Send, ChevronLeft } from 'lucide-react';
+
+const AVATAR_SEEDS = [
+  'Felix', 'Aneka', 'Jade', 'Milo', 'Sasha', 'Ravi', 'Luna', 'Kai',
+  'Zara', 'Oscar', 'Nyla', 'Theo', 'Iris', 'Leo', 'Dara', 'Nico',
+  'Emi', 'Sol', 'Mina', 'Jude', 'Aria', 'Ezra', 'Sage', 'Rio'
+];
+
+const getAvatarUrl = (seed) =>
+  `https://api.dicebear.com/9.x/open-peeps/svg?seed=${seed}&backgroundColor=ffffff`;
+
+const AvatarPicker = ({ selected, onSelect }) => {
+  return (
+    <div>
+      <p className="text-xs font-bold text-black mb-3 uppercase tracking-wider">Choose your avatar</p>
+      <div className="grid grid-cols-6 gap-2">
+        {AVATAR_SEEDS.map((seed) => (
+          <button
+            key={seed}
+            onClick={() => onSelect(getAvatarUrl(seed))}
+            className={`w-full aspect-square rounded-full border-2 transition-colors overflow-hidden ${
+              selected === getAvatarUrl(seed) ? 'border-black' : 'border-black/10 hover:border-black/30'
+            }`}
+          >
+            <img src={getAvatarUrl(seed)} alt={seed} className="w-full h-full" />
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+};
 
 const useAuth = () => {
   const [currentUser, setCurrentUser] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [emailSent, setEmailSent] = useState(false);
 
   useEffect(() => {
     const savedUser = localStorage.getItem('umamiUser');
@@ -13,84 +41,39 @@ const useAuth = () => {
     }
   }, []);
 
-  const sendSignInLink = async (email) => {
-    setLoading(true);
-    try {
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      localStorage.setItem('emailForSignIn', email);
-      setEmailSent(true);
-      alert(`Sign-in link sent to ${email}!\n\nFor demo: Click "Complete Sign In" below`);
-    } catch (error) {
-      alert(error.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const completeEmailSignIn = async () => {
-    const email = localStorage.getItem('emailForSignIn');
-    if (!email) {
-      alert('No pending sign-in found');
-      return;
-    }
-
-    const name = prompt('Welcome! What should we call you?');
-    if (!name) return;
-
+  const createAccount = ({ name, email, avatar }) => {
     const newUser = {
       id: Date.now(),
       email,
       name,
-      avatar: `https://api.dicebear.com/9.x/open-peeps/svg?seed=${name}&backgroundColor=ffffff`,
-      authMethod: 'email'
+      avatar
     };
-
     setCurrentUser(newUser);
     localStorage.setItem('umamiUser', JSON.stringify(newUser));
-    localStorage.removeItem('emailForSignIn');
-    setEmailSent(false);
   };
 
-  const signInWithGoogle = async () => {
-    const name = prompt('Welcome! What should we call you?');
-    if (!name) return;
-    const email = prompt('And your email?');
-    if (!email) return;
-
-    setLoading(true);
-    try {
-      await new Promise(resolve => setTimeout(resolve, 500));
-
-      const newUser = {
-        id: Date.now(),
-        email,
-        name,
-        avatar: `https://api.dicebear.com/9.x/open-peeps/svg?seed=${name}&backgroundColor=ffffff`,
-        authMethod: 'google'
-      };
-
-      setCurrentUser(newUser);
-      localStorage.setItem('umamiUser', JSON.stringify(newUser));
-    } catch (error) {
-      alert(error.message);
-    } finally {
-      setLoading(false);
-    }
+  const updateAvatar = (avatar) => {
+    const updated = { ...currentUser, avatar };
+    setCurrentUser(updated);
+    localStorage.setItem('umamiUser', JSON.stringify(updated));
   };
 
-  const logout = async () => {
+  const logout = () => {
     setCurrentUser(null);
     localStorage.removeItem('umamiUser');
-    setEmailSent(false);
   };
 
-  return { currentUser, loading, emailSent, setEmailSent, sendSignInLink, completeEmailSignIn, signInWithGoogle, logout };
+  return { currentUser, createAccount, updateAvatar, logout };
 };
 
 export default function App() {
-  const { currentUser, loading, emailSent, setEmailSent, sendSignInLink, completeEmailSignIn, signInWithGoogle, logout } = useAuth();
-  const [email, setEmail] = useState('');
+  const { currentUser, createAccount, updateAvatar, logout } = useAuth();
+  const [signUpStep, setSignUpStep] = useState('form'); // 'form' | 'avatar'
+  const [signUpName, setSignUpName] = useState('');
+  const [signUpEmail, setSignUpEmail] = useState('');
+  const [signUpAvatar, setSignUpAvatar] = useState(getAvatarUrl(AVATAR_SEEDS[0]));
   const [activeTab, setActiveTab] = useState('feed');
+  const [showAvatarPicker, setShowAvatarPicker] = useState(false);
   const [likedItems, setLikedItems] = useState(() => {
     const saved = localStorage.getItem('umamiLikedItems');
     return saved ? new Set(JSON.parse(saved)) : new Set();
@@ -110,17 +93,25 @@ export default function App() {
     localStorage.setItem('umamiLikedItems', JSON.stringify([...likedItems]));
   }, [likedItems]);
 
-  const handleEmailSignIn = async () => {
-    if (!email || !email.includes('@')) {
-      alert('Please enter a valid email');
+  const handleSignUp = () => {
+    if (!signUpName || !signUpEmail || !signUpEmail.includes('@')) {
+      alert('Please enter your name and a valid email');
       return;
     }
-    await sendSignInLink(email);
+    setSignUpStep('avatar');
   };
 
-  const handleLogout = async () => {
-    await logout();
+  const handleCompleteSignUp = () => {
+    createAccount({ name: signUpName, email: signUpEmail, avatar: signUpAvatar });
+    setSignUpStep('form');
+    setSignUpName('');
+    setSignUpEmail('');
+  };
+
+  const handleLogout = () => {
+    logout();
     setActiveTab('feed');
+    setSignUpStep('form');
   };
 
   const handleAddItem = () => {
@@ -147,7 +138,7 @@ export default function App() {
   };
 
   const categoryOptions = {
-    music: ['Album', 'Single', 'EP', 'Mixtape', 'Soundtrack', 'Live Album'],
+    music: ['Album', 'Single', 'EP', 'Mixtape', 'Soundtrack', 'Live Album', 'DJ Mix', 'Radio Show'],
     book: ['Novel', 'Non-Fiction', 'Poetry', 'Memoir', 'Short Stories', 'Graphic Novel'],
     tv: ['TV Series', 'Film', 'Documentary', 'Mini-Series', 'Anime', 'Short Film'],
     podcast: ['Interview', 'Narrative', 'Comedy', 'True Crime', 'Educational', 'News'],
@@ -188,37 +179,31 @@ export default function App() {
           </div>
 
           <div className="border border-black/10 p-8">
-            {!emailSent ? (
+            {signUpStep === 'form' ? (
               <>
-                <h2 className="text-sm font-bold text-black mb-6 uppercase tracking-wider">Sign in</h2>
-
-                <button
-                  onClick={signInWithGoogle}
-                  disabled={loading}
-                  className="w-full border border-black text-black py-3 px-4 text-xs tracking-wider uppercase hover:bg-black hover:text-white transition-colors flex items-center justify-center gap-3 mb-4"
-                >
-                  Continue with Google
-                </button>
-
-                <div className="relative my-6">
-                  <div className="absolute inset-0 flex items-center">
-                    <div className="w-full border-t border-black/10"></div>
-                  </div>
-                  <div className="relative flex justify-center text-xs">
-                    <span className="px-4 bg-white text-black/40 uppercase tracking-wider">or</span>
-                  </div>
-                </div>
+                <h2 className="text-sm font-bold text-black mb-6 uppercase tracking-wider">Get started</h2>
 
                 <div className="space-y-4">
+                  <div>
+                    <label className="block text-xs font-bold text-black mb-2 uppercase tracking-wider">Name</label>
+                    <input
+                      type="text"
+                      value={signUpName}
+                      onChange={(e) => setSignUpName(e.target.value)}
+                      placeholder="What should we call you?"
+                      className="w-full px-4 py-3 border border-black/20 text-sm focus:border-black outline-none transition-colors"
+                    />
+                  </div>
+
                   <div>
                     <label className="block text-xs font-bold text-black mb-2 uppercase tracking-wider">Email</label>
                     <div className="relative">
                       <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-black/30" />
                       <input
                         type="email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        onKeyPress={(e) => e.key === 'Enter' && handleEmailSignIn()}
+                        value={signUpEmail}
+                        onChange={(e) => setSignUpEmail(e.target.value)}
+                        onKeyPress={(e) => e.key === 'Enter' && handleSignUp()}
                         placeholder="you@example.com"
                         className="w-full pl-10 pr-4 py-3 border border-black/20 text-sm focus:border-black outline-none transition-colors"
                       />
@@ -226,11 +211,10 @@ export default function App() {
                   </div>
 
                   <button
-                    onClick={handleEmailSignIn}
-                    disabled={loading}
-                    className="w-full bg-black text-white py-3 text-xs font-bold uppercase tracking-wider hover:bg-black/80 transition-colors disabled:opacity-50"
+                    onClick={handleSignUp}
+                    className="w-full bg-black text-white py-3 text-xs font-bold uppercase tracking-wider hover:bg-black/80 transition-colors"
                   >
-                    {loading ? 'Sending...' : 'Send sign-in link'}
+                    Next
                   </button>
                 </div>
 
@@ -239,30 +223,24 @@ export default function App() {
                 </p>
               </>
             ) : (
-              <div className="text-center">
-                <Mail className="w-8 h-8 text-black mx-auto mb-4" />
-                <h3 className="text-sm font-bold text-black mb-2 uppercase tracking-wider">Check your email</h3>
-                <p className="text-xs text-black/50 mb-6">
-                  Link sent to <strong className="text-black">{localStorage.getItem('emailForSignIn')}</strong>
-                </p>
+              <>
+                <button
+                  onClick={() => setSignUpStep('form')}
+                  className="flex items-center gap-1 text-xs text-black/40 hover:text-black uppercase tracking-wider mb-6"
+                >
+                  <ChevronLeft className="w-3.5 h-3.5" />
+                  Back
+                </button>
 
-                <div className="border border-black/10 p-4 mb-6">
-                  <p className="text-xs text-black/40 mb-3 uppercase tracking-wider">Demo mode</p>
-                  <button
-                    onClick={completeEmailSignIn}
-                    className="w-full bg-black text-white py-2 px-4 text-xs font-bold uppercase tracking-wider hover:bg-black/80 transition-colors"
-                  >
-                    Complete Sign In
-                  </button>
-                </div>
+                <AvatarPicker selected={signUpAvatar} onSelect={setSignUpAvatar} />
 
                 <button
-                  onClick={() => setEmailSent(false)}
-                  className="text-xs text-black/40 hover:text-black tracking-wide uppercase"
+                  onClick={handleCompleteSignUp}
+                  className="w-full bg-black text-white py-3 text-xs font-bold uppercase tracking-wider hover:bg-black/80 transition-colors mt-6"
                 >
-                  Use different email
+                  Create account
                 </button>
-              </div>
+              </>
             )}
           </div>
 
@@ -399,7 +377,25 @@ export default function App() {
               />
               <h2 className="text-sm font-bold text-black uppercase tracking-wider">{currentUser.name}</h2>
               <p className="text-xs text-black/30 mt-1">{currentUser.email}</p>
+              <button
+                onClick={() => setShowAvatarPicker(!showAvatarPicker)}
+                className="text-xs text-black/40 hover:text-black uppercase tracking-wider mt-3"
+              >
+                {showAvatarPicker ? 'Close' : 'Change avatar'}
+              </button>
             </div>
+
+            {showAvatarPicker && (
+              <div className="border border-black/10 p-4 mb-6">
+                <AvatarPicker
+                  selected={currentUser.avatar}
+                  onSelect={(avatar) => {
+                    updateAvatar(avatar);
+                    setShowAvatarPicker(false);
+                  }}
+                />
+              </div>
+            )}
 
             <div className="grid grid-cols-2 gap-3">
               <div className="border border-black/5 p-4 text-center">
