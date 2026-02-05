@@ -13,3 +13,8 @@
 .env.production.local
 
 npm-debug.log*
+
+# Capacitor iOS build artifacts
+ios/App/App/public
+ios/App/Pods
+ios/capacitor-cordova-ios-plugins
