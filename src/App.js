@@ -359,7 +359,7 @@ export default function App() {
   return (
     <div className="bg-white min-h-screen">
     <div className="max-w-2xl mx-auto bg-white min-h-screen relative sm:border-x sm:border-black/5">
-      <div className="sticky top-0 bg-white border-b border-black/10 px-4 sm:px-6 py-4 sm:py-5 z-10">
+      <div className="sticky top-0 bg-white border-b border-black/10 px-4 sm:px-6 py-4 sm:py-5 z-10" style={{paddingTop: 'max(1rem, env(safe-area-inset-top))'}}>
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-lg tracking-widest text-black uppercase">umami</h1>
