@@ -281,7 +281,7 @@ export default function App() {
                       value={signUpName}
                       onChange={(e) => setSignUpName(e.target.value)}
                       placeholder="What should we call you?"
-                      className="w-full px-4 py-3 border border-black/20 text-sm focus:border-black outline-none transition-colors"
+                      className="w-full px-4 py-3 border border-black/20 text-base focus:border-black outline-none transition-colors"
                     />
                   </div>
 
@@ -295,7 +295,7 @@ export default function App() {
                         onChange={(e) => setSignUpEmail(e.target.value)}
                         onKeyPress={(e) => e.key === 'Enter' && handleSignUp()}
                         placeholder="you@example.com"
-                        className="w-full pl-10 pr-4 py-3 border border-black/20 text-sm focus:border-black outline-none transition-colors"
+                        className="w-full pl-10 pr-4 py-3 border border-black/20 text-base focus:border-black outline-none transition-colors"
                       />
                     </div>
                   </div>
@@ -309,7 +309,7 @@ export default function App() {
                         onChange={(e) => setSignUpInviteCode(e.target.value.toUpperCase())}
                         placeholder="XXXX-XXXX"
                         maxLength={9}
-                        className="w-full px-4 py-3 border border-black/20 text-sm focus:border-black outline-none transition-colors tracking-widest text-center uppercase"
+                        className="w-full px-4 py-3 border border-black/20 text-base focus:border-black outline-none transition-colors tracking-widest text-center uppercase"
                       />
                     </div>
                   )}
@@ -642,7 +642,7 @@ export default function App() {
                 <select
                   value={newItem.type}
                   onChange={(e) => setNewItem({ ...newItem, type: e.target.value, category: '' })}
-                  className="w-full px-4 py-3 border border-black/20 text-sm focus:border-black outline-none transition-colors"
+                  className="w-full px-4 py-3 border border-black/20 text-base focus:border-black outline-none transition-colors"
                 >
                   <option value="music">Music</option>
                   <option value="book">Book</option>
@@ -660,7 +660,7 @@ export default function App() {
                   value={newItem.content}
                   onChange={(e) => setNewItem({ ...newItem, content: e.target.value })}
                   placeholder="e.g., Blonde - Frank Ocean"
-                  className="w-full px-4 py-3 border border-black/20 text-sm focus:border-black outline-none transition-colors"
+                  className="w-full px-4 py-3 border border-black/20 text-base focus:border-black outline-none transition-colors"
                 />
               </div>
 
@@ -669,7 +669,7 @@ export default function App() {
                 <select
                   value={newItem.category}
                   onChange={(e) => setNewItem({ ...newItem, category: e.target.value })}
-                  className="w-full px-4 py-3 border border-black/20 text-sm focus:border-black outline-none transition-colors"
+                  className="w-full px-4 py-3 border border-black/20 text-base focus:border-black outline-none transition-colors"
                 >
                   <option value="">Select a category</option>
                   {(categoryOptions[newItem.type] || []).map((cat) => (
@@ -685,7 +685,7 @@ export default function App() {
                   value={newItem.link}
                   onChange={(e) => setNewItem({ ...newItem, link: e.target.value })}
                   placeholder="e.g., https://open.spotify.com/..."
-                  className="w-full px-4 py-3 border border-black/20 text-sm focus:border-black outline-none transition-colors"
+                  className="w-full px-4 py-3 border border-black/20 text-base focus:border-black outline-none transition-colors"
                 />
               </div>
 
