@@ -7,7 +7,8 @@ const config: CapacitorConfig = {
   ios: {
     contentInset: 'automatic',
     preferredContentMode: 'mobile',
-    scheme: 'umami'
+    scheme: 'umami',
+    backgroundColor: '#ffffff'
   },
   server: {
     iosScheme: 'https'
