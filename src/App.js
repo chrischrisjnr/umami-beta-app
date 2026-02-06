@@ -375,7 +375,7 @@ export default function App() {
         </div>
       </div>
 
-      <div className="pb-24">
+      <div className="pb-24 pt-2">
         {activeTab === 'feed' && allFeedItems.length === 0 && (
           <div className="text-center py-20 px-4 sm:px-6">
             <Plus className="w-8 h-8 text-black/20 mx-auto mb-4" />
@@ -412,7 +412,7 @@ export default function App() {
               <p className="text-sm text-black mb-0.5">{item.content}</p>
               <p className="text-xs text-black/40 mb-4 tracking-wide">{item.category}</p>
 
-              <div className="mb-4 flex items-center gap-3">
+              <div className="mb-4 flex flex-wrap items-center gap-3">
                 <a
                   href={item.wikiUrl || `https://en.wikipedia.org/wiki/Special:Search?search=${encodeURIComponent(item.content)}`}
                   target="_blank"
@@ -422,6 +422,28 @@ export default function App() {
                   Wikipedia
                   <ExternalLink className="w-2.5 h-2.5" />
                 </a>
+                {item.type === 'music' && (
+                  <>
+                    <a
+                      href={`https://open.spotify.com/search/${encodeURIComponent(item.content)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-black/30 text-xs tracking-wide uppercase flex items-center gap-1 hover:text-black transition-colors"
+                    >
+                      Spotify
+                      <ExternalLink className="w-2.5 h-2.5" />
+                    </a>
+                    <a
+                      href={`https://music.apple.com/search?term=${encodeURIComponent(item.content)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-black/30 text-xs tracking-wide uppercase flex items-center gap-1 hover:text-black transition-colors"
+                    >
+                      Apple Music
+                      <ExternalLink className="w-2.5 h-2.5" />
+                    </a>
+                  </>
+                )}
                 {item.mediaUrl && (
                   <a
                     href={item.mediaUrl}
