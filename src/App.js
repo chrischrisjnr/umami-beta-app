@@ -357,9 +357,9 @@ export default function App() {
   }
 
   return (
-    <div className="h-screen flex flex-col bg-white">
-      {/* Header */}
-      <div className="flex-shrink-0 bg-white border-b border-black/10 px-4 sm:px-6 py-4 sm:py-5" style={{paddingTop: 'max(1rem, env(safe-area-inset-top))'}}>
+    <div className="bg-white min-h-screen">
+      {/* Fixed Header */}
+      <header className="fixed top-0 left-0 right-0 bg-white border-b border-black/10 z-50 px-4 sm:px-6 py-4 sm:py-5" style={{paddingTop: 'max(1rem, env(safe-area-inset-top))'}}>
         <div className="max-w-2xl mx-auto flex items-center justify-between">
           <div>
             <h1 className="text-lg tracking-widest text-black uppercase">umami</h1>
@@ -373,11 +373,10 @@ export default function App() {
             <LogOut className="w-4 h-4" />
           </button>
         </div>
-      </div>
+      </header>
 
-      {/* Scrollable Content */}
-      <div className="flex-1 overflow-y-auto">
-        <div className="max-w-2xl mx-auto">
+      {/* Content with padding for fixed header/footer */}
+      <main className="max-w-2xl mx-auto" style={{paddingTop: 'calc(5rem + env(safe-area-inset-top))', paddingBottom: 'calc(5rem + env(safe-area-inset-bottom))'}}>
 
         {activeTab === 'feed' && allFeedItems.length === 0 && (
           <div className="text-center py-20 px-4 sm:px-6">
@@ -606,12 +605,11 @@ export default function App() {
             </div>
           </div>
         )}
-        </div>
-      </div>
+      </main>
 
-      {/* Footer */}
-      <div className="flex-shrink-0 bg-white border-t border-black/10">
-        <div className="max-w-2xl mx-auto flex justify-around items-center px-4 sm:px-6 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+      {/* Fixed Footer */}
+      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-black/10 z-50">
+        <div className="max-w-2xl mx-auto flex justify-around items-center px-4 sm:px-6 py-3" style={{paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom))'}}>
           <button
             onClick={() => setActiveTab('feed')}
             className={`flex flex-col items-center gap-1 transition-colors ${activeTab === 'feed' ? 'text-black' : 'text-black/20'}`}
@@ -651,7 +649,7 @@ export default function App() {
             <span className="text-xs tracking-wider uppercase">Profile</span>
           </button>
         </div>
-      </div>
+      </nav>
 
       {showAddModal && (
         <div className="fixed inset-0 bg-black/50 flex items-end sm:items-center justify-center z-50">
