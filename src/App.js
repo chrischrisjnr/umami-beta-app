@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Play, Book, Headphones, Tv, Heart, Plus, User, Home, Compass, ExternalLink, Ticket, Palette, Mail, LogOut, Send, ChevronLeft, Copy, Check } from 'lucide-react';
+import { Headphones, Heart, Plus, ExternalLink, Mail, LogOut, Send, ChevronLeft, Copy, Check, X } from 'lucide-react';
 
 const generateCode = () => {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -37,6 +37,8 @@ const AVATAR_SEEDS = [
 
 const getAvatarUrl = (seed) =>
   `https://api.dicebear.com/9.x/open-peeps/svg?seed=${seed}&backgroundColor=ffffff`;
+
+const MUSIC_CATEGORIES = ['Album', 'Single', 'EP', 'Mixtape', 'Soundtrack', 'Live Album', 'DJ Mix', 'Radio Show', 'Artist'];
 
 const AvatarPicker = ({ selected, onSelect }) => {
   return (
@@ -82,7 +84,6 @@ const useAuth = () => {
       invitedBy: inviteCode || null
     };
 
-    // Mark invite as used
     if (inviteCode) {
       const invites = getInvites();
       const idx = invites.findIndex(i => i.code === inviteCode && !i.used);
@@ -115,23 +116,26 @@ const useAuth = () => {
 };
 
 export default function App() {
-  const { currentUser, createAccount, updateAvatar, logout } = useAuth();
-  const [signUpStep, setSignUpStep] = useState('form'); // 'form' | 'avatar'
+  const { currentUser, createAccount, logout } = useAuth();
+  const [signUpStep, setSignUpStep] = useState('form');
   const [signUpName, setSignUpName] = useState('');
   const [signUpEmail, setSignUpEmail] = useState('');
   const [signUpInviteCode, setSignUpInviteCode] = useState('');
   const [signUpAvatar, setSignUpAvatar] = useState(getAvatarUrl(AVATAR_SEEDS[0]));
   const isFirstUser = getMembers().length === 0;
-  const [activeTab, setActiveTab] = useState('feed');
-  const [showAvatarPicker, setShowAvatarPicker] = useState(false);
+
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [showProfile, setShowProfile] = useState(false);
   const [copiedCode, setCopiedCode] = useState(null);
   const [invites, setInvites] = useState(getInvites);
+
   const [likedItems, setLikedItems] = useState(() => {
     const saved = localStorage.getItem('umamiLikedItems');
     return saved ? new Set(JSON.parse(saved)) : new Set();
   });
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [newItem, setNewItem] = useState({ type: 'music', content: '', category: '', link: '' });
+
+  const [newItem, setNewItem] = useState({ content: '', category: '', link: '' });
   const [userItems, setUserItems] = useState(() => {
     const saved = localStorage.getItem('umamiItems');
     return saved ? JSON.parse(saved) : [];
@@ -195,15 +199,9 @@ export default function App() {
     });
   };
 
-  const handleLogout = () => {
-    logout();
-    setActiveTab('feed');
-    setSignUpStep('form');
-  };
-
   const handleAddItem = () => {
     if (!newItem.content || !newItem.category) {
-      alert('Please fill in content and category');
+      alert('Please fill in title and category');
       return;
     }
 
@@ -212,7 +210,6 @@ export default function App() {
       userId: currentUser.id,
       user: currentUser.name,
       avatar: currentUser.avatar,
-      type: newItem.type,
       content: newItem.content,
       category: newItem.category,
       time: 'Just now',
@@ -222,31 +219,8 @@ export default function App() {
 
     setUserItems([item, ...userItems]);
     setShowAddModal(false);
-    setNewItem({ type: 'music', content: '', category: '', link: '' });
-  };
-
-  const categoryOptions = {
-    music: ['Album', 'Single', 'EP', 'Mixtape', 'Soundtrack', 'Live Album', 'DJ Mix', 'Radio Show', 'Artist'],
-    book: ['Novel', 'Non-Fiction', 'Poetry', 'Memoir', 'Short Stories', 'Graphic Novel', 'Author'],
-    tv: ['TV Series', 'Film', 'Documentary', 'Mini-Series', 'Anime', 'Short Film', 'Actor', 'Director'],
-    podcast: ['Interview', 'Narrative', 'Comedy', 'True Crime', 'Educational', 'News'],
-    theatre: ['Musical', 'Play', 'Opera', 'Ballet', 'Comedy', 'One-Person Show'],
-    exhibition: ['Art', 'Photography', 'History', 'Science', 'Design', 'Mixed Media']
-  };
-
-  const allFeedItems = userItems;
-
-  const getIcon = (type) => {
-    const iconClass = "w-4 h-4";
-    switch(type) {
-      case 'music': return <Headphones className={iconClass} />;
-      case 'book': return <Book className={iconClass} />;
-      case 'tv': return <Tv className={iconClass} />;
-      case 'podcast': return <Play className={iconClass} />;
-      case 'theatre': return <Ticket className={iconClass} />;
-      case 'exhibition': return <Palette className={iconClass} />;
-      default: return null;
-    }
+    setNewItem({ content: '', category: '', link: '' });
+    setCurrentIndex(0);
   };
 
   const toggleLike = (id) => {
@@ -257,13 +231,26 @@ export default function App() {
     });
   };
 
+  const goNext = () => {
+    if (currentIndex < userItems.length - 1) {
+      setCurrentIndex(currentIndex + 1);
+    }
+  };
+
+  const goPrev = () => {
+    if (currentIndex > 0) {
+      setCurrentIndex(currentIndex - 1);
+    }
+  };
+
+  // Sign up screen (unchanged)
   if (!currentUser) {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center p-6">
         <div className="max-w-md w-full">
           <div className="text-center mb-10">
             <h1 className="text-4xl tracking-wider text-black mb-2 uppercase">umami</h1>
-            <p className="text-xs text-black/50 tracking-wide">taste, not takes</p>
+            <p className="text-xs text-black/50 tracking-wide">share the music you love</p>
           </div>
 
           <div className="border border-black/10 p-8">
@@ -356,166 +343,225 @@ export default function App() {
     );
   }
 
+  const currentItem = userItems[currentIndex];
+
+  // Stories-style main view
   return (
-    <div className="bg-white min-h-screen">
-      {/* Fixed Header */}
-      <header className="fixed top-0 left-0 right-0 bg-white border-b border-black/10 z-50 px-4 sm:px-6 py-4 sm:py-5" style={{paddingTop: 'max(1rem, env(safe-area-inset-top))'}}>
-        <div className="max-w-2xl mx-auto flex items-center justify-between">
+    <div className="h-screen bg-black flex flex-col" style={{paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)'}}>
+
+      {/* Progress bars */}
+      {userItems.length > 0 && (
+        <div className="flex gap-1 px-3 pt-2 pb-3">
+          {userItems.map((_, idx) => (
+            <div key={idx} className="flex-1 h-0.5 rounded-full overflow-hidden bg-white/20">
+              <div
+                className={`h-full bg-white transition-all duration-300 ${idx < currentIndex ? 'w-full' : idx === currentIndex ? 'w-full' : 'w-0'}`}
+              />
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Header */}
+      <div className="flex items-center justify-between px-4 pb-3">
+        <div className="flex items-center gap-3">
+          <button onClick={() => setShowProfile(true)}>
+            <img
+              src={currentUser.avatar}
+              alt={currentUser.name}
+              className="w-8 h-8 rounded-full border-2 border-white/50"
+            />
+          </button>
           <div>
-            <h1 className="text-lg tracking-widest text-black uppercase">umami</h1>
-            <p className="text-xs text-black/30 mt-0.5 tracking-wide">what you're into right now</p>
+            <p className="text-white text-sm font-bold uppercase tracking-wider">umami</p>
           </div>
+        </div>
+        <div className="flex items-center gap-3">
           <button
-            onClick={handleLogout}
-            className="text-black/30 hover:text-black transition-colors"
-            title="Log out"
+            onClick={() => setShowAddModal(true)}
+            className="bg-white text-black rounded-full p-2"
+          >
+            <Plus className="w-4 h-4" />
+          </button>
+          <button
+            onClick={logout}
+            className="text-white/50 hover:text-white transition-colors"
           >
             <LogOut className="w-4 h-4" />
           </button>
         </div>
-      </header>
+      </div>
 
-      {/* Content with padding for fixed header/footer */}
-      <main className="max-w-2xl mx-auto" style={{paddingTop: 'calc(5rem + env(safe-area-inset-top))', paddingBottom: 'calc(5rem + env(safe-area-inset-bottom))'}}>
-
-        {activeTab === 'feed' && allFeedItems.length === 0 && (
-          <div className="text-center py-20 px-4 sm:px-6">
-            <Plus className="w-8 h-8 text-black/20 mx-auto mb-4" />
-            <p className="text-sm text-black font-bold uppercase tracking-wider mb-1">Empty</p>
-            <p className="text-xs text-black/40 mb-8 tracking-wide">Share what you're into</p>
-            <button
-              onClick={() => setShowAddModal(true)}
-              className="bg-black text-white px-6 py-2.5 text-xs font-bold uppercase tracking-wider hover:bg-black/80 transition-colors"
-            >
-              Add your first pick
-            </button>
-          </div>
-        )}
-        {activeTab === 'feed' && allFeedItems.map((item) => (
-          <div key={item.id} className="border-b border-black/5 p-4 sm:p-6">
-            <div className="flex items-start justify-between mb-3">
-              <div className="flex items-center gap-3">
-                <img
-                  src={item.avatar}
-                  alt={item.user}
-                  className="w-8 h-8 rounded-full border border-black/10"
-                />
-                <div>
-                  <p className="text-xs font-bold text-black uppercase tracking-wider">{item.user}</p>
-                  <p className="text-xs text-black/30 mt-0.5">{item.time}</p>
-                </div>
-              </div>
-              <div className="text-black/20">
-                {getIcon(item.type)}
-              </div>
-            </div>
-
-            <div className="ml-11">
-              <p className="text-sm text-black mb-0.5">{item.content}</p>
-              <p className="text-xs text-black/40 mb-4 tracking-wide">{item.category}</p>
-
-              <div className="mb-4 flex flex-wrap items-center gap-3">
-                <a
-                  href={item.wikiUrl || `https://en.wikipedia.org/wiki/Special:Search?search=${encodeURIComponent(item.content)}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-black/30 text-xs tracking-wide uppercase flex items-center gap-1 hover:text-black transition-colors"
-                >
-                  Wikipedia
-                  <ExternalLink className="w-2.5 h-2.5" />
-                </a>
-                {item.type === 'music' && (
-                  <>
-                    <a
-                      href={`https://open.spotify.com/search/${encodeURIComponent(item.content)}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-black/30 text-xs tracking-wide uppercase flex items-center gap-1 hover:text-black transition-colors"
-                    >
-                      Spotify
-                      <ExternalLink className="w-2.5 h-2.5" />
-                    </a>
-                    <a
-                      href={`https://music.apple.com/search?term=${encodeURIComponent(item.content)}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-black/30 text-xs tracking-wide uppercase flex items-center gap-1 hover:text-black transition-colors"
-                    >
-                      Apple Music
-                      <ExternalLink className="w-2.5 h-2.5" />
-                    </a>
-                  </>
-                )}
-                {item.mediaUrl && (
-                  <a
-                    href={item.mediaUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-black/30 text-xs tracking-wide uppercase flex items-center gap-1 hover:text-black transition-colors"
-                  >
-                    {(() => {
-                      try {
-                        const host = new URL(item.mediaUrl).hostname.replace('www.', '');
-                        const name = host.split('.')[0];
-                        return name.charAt(0).toUpperCase() + name.slice(1);
-                      } catch { return 'Link'; }
-                    })()}
-                    <ExternalLink className="w-2.5 h-2.5" />
-                  </a>
-                )}
-              </div>
-
+      {/* Main content area */}
+      <div className="flex-1 relative">
+        {userItems.length === 0 ? (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="text-center px-8">
+              <Headphones className="w-12 h-12 text-white/20 mx-auto mb-4" />
+              <p className="text-white text-lg font-bold uppercase tracking-wider mb-2">No music yet</p>
+              <p className="text-white/50 text-sm mb-6">Share what you're listening to</p>
               <button
-                onClick={() => toggleLike(item.id)}
-                className="flex items-center gap-1.5 text-xs text-black/30 hover:text-black transition-colors"
+                onClick={() => setShowAddModal(true)}
+                className="bg-white text-black px-6 py-3 text-xs font-bold uppercase tracking-wider"
               >
-                <Heart
-                  className={`w-3.5 h-3.5 ${likedItems.has(item.id) ? 'fill-black text-black' : ''}`}
-                />
-                <span className={likedItems.has(item.id) ? 'text-black' : ''}>
-                  {likedItems.has(item.id) ? 'Saved' : 'Save'}
-                </span>
+                Add your first pick
               </button>
             </div>
           </div>
-        ))}
-
-        {activeTab === 'discover' && (
-          <div className="p-4 sm:p-6">
-            <h2 className="text-sm font-bold text-black uppercase tracking-wider mb-1">Discover</h2>
-            <p className="text-xs text-black/30 mb-8 tracking-wide">find people with great taste</p>
-            <div className="text-center py-12">
-              <Compass className="w-8 h-8 text-black/15 mx-auto mb-4" />
-              <p className="text-xs text-black/30 uppercase tracking-wider">Coming soon</p>
+        ) : (
+          <>
+            {/* Tap zones for navigation */}
+            <div className="absolute inset-0 flex">
+              <button
+                className="w-1/3 h-full"
+                onClick={goPrev}
+                aria-label="Previous"
+              />
+              <div className="w-1/3 h-full" />
+              <button
+                className="w-1/3 h-full"
+                onClick={goNext}
+                aria-label="Next"
+              />
             </div>
-          </div>
-        )}
 
-        {activeTab === 'saved' && (
-          <div className="p-4 sm:p-6">
-            <h2 className="text-sm font-bold text-black uppercase tracking-wider mb-1">Saved</h2>
-            <p className="text-xs text-black/30 mb-8 tracking-wide">things to check out</p>
-            {likedItems.size === 0 ? (
-              <div className="text-center py-12">
-                <Heart className="w-8 h-8 text-black/15 mx-auto mb-4" />
-                <p className="text-xs text-black/30 uppercase tracking-wider">Nothing saved yet</p>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {allFeedItems.filter(item => likedItems.has(item.id)).map(item => (
-                  <div key={item.id} className="border border-black/5 p-4">
-                    <p className="text-sm text-black">{item.content}</p>
-                    <p className="text-xs text-black/30 mt-1 tracking-wide">{item.category}</p>
-                  </div>
-                ))}
+            {/* Current item display */}
+            {currentItem && (
+              <div className="absolute inset-0 flex flex-col items-center justify-center px-8 pointer-events-none">
+                <img
+                  src={currentItem.avatar}
+                  alt={currentItem.user}
+                  className="w-16 h-16 rounded-full border-2 border-white/30 mb-4"
+                />
+                <p className="text-white/60 text-xs uppercase tracking-wider mb-1">{currentItem.user}</p>
+                <p className="text-white/40 text-xs mb-8">{currentItem.time}</p>
+
+                <p className="text-white text-2xl font-bold text-center mb-2 uppercase tracking-wide">{currentItem.content}</p>
+                <p className="text-white/50 text-sm tracking-wider mb-8">{currentItem.category}</p>
+
+                {/* Links */}
+                <div className="flex flex-wrap justify-center gap-4 pointer-events-auto">
+                  <a
+                    href={currentItem.wikiUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-white/40 text-xs tracking-wide uppercase flex items-center gap-1 hover:text-white transition-colors"
+                  >
+                    Wikipedia
+                    <ExternalLink className="w-2.5 h-2.5" />
+                  </a>
+                  <a
+                    href={`https://open.spotify.com/search/${encodeURIComponent(currentItem.content)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-white/40 text-xs tracking-wide uppercase flex items-center gap-1 hover:text-white transition-colors"
+                  >
+                    Spotify
+                    <ExternalLink className="w-2.5 h-2.5" />
+                  </a>
+                  <a
+                    href={`https://music.apple.com/search?term=${encodeURIComponent(currentItem.content)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-white/40 text-xs tracking-wide uppercase flex items-center gap-1 hover:text-white transition-colors"
+                  >
+                    Apple Music
+                    <ExternalLink className="w-2.5 h-2.5" />
+                  </a>
+                </div>
+
+                {/* Like button */}
+                <button
+                  onClick={() => toggleLike(currentItem.id)}
+                  className="mt-8 flex items-center gap-2 pointer-events-auto"
+                >
+                  <Heart
+                    className={`w-6 h-6 transition-colors ${likedItems.has(currentItem.id) ? 'fill-white text-white' : 'text-white/40'}`}
+                  />
+                </button>
               </div>
             )}
-          </div>
+          </>
         )}
+      </div>
 
-        {activeTab === 'profile' && (
-          <div className="p-4 sm:p-6">
-            <div className="text-center mb-10">
+      {/* Navigation hint */}
+      {userItems.length > 1 && (
+        <div className="text-center pb-4">
+          <p className="text-white/30 text-xs tracking-wider">TAP TO NAVIGATE</p>
+        </div>
+      )}
+
+      {/* Add Modal */}
+      {showAddModal && (
+        <div className="fixed inset-0 bg-white z-50 flex flex-col" style={{paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)'}}>
+          <div className="flex items-center justify-between px-4 py-4 border-b border-black/10">
+            <h3 className="text-sm font-bold uppercase tracking-wider">Share music</h3>
+            <button onClick={() => setShowAddModal(false)} className="text-black/30 hover:text-black">
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+
+          <div className="flex-1 p-4 space-y-4">
+            <div>
+              <label className="block text-xs font-bold text-black mb-2 uppercase tracking-wider">Title / Artist</label>
+              <input
+                type="text"
+                value={newItem.content}
+                onChange={(e) => setNewItem({ ...newItem, content: e.target.value })}
+                placeholder="e.g., Blonde - Frank Ocean"
+                className="w-full px-4 py-3 border border-black/20 text-base focus:border-black outline-none transition-colors"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-black mb-2 uppercase tracking-wider">Category</label>
+              <select
+                value={newItem.category}
+                onChange={(e) => setNewItem({ ...newItem, category: e.target.value })}
+                className="w-full px-4 py-3 border border-black/20 text-base focus:border-black outline-none transition-colors"
+              >
+                <option value="">Select a category</option>
+                {MUSIC_CATEGORIES.map((cat) => (
+                  <option key={cat} value={cat}>{cat}</option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-black mb-2 uppercase tracking-wider">Link <span className="font-normal text-black/30">(optional)</span></label>
+              <input
+                type="url"
+                value={newItem.link}
+                onChange={(e) => setNewItem({ ...newItem, link: e.target.value })}
+                placeholder="e.g., https://open.spotify.com/..."
+                className="w-full px-4 py-3 border border-black/20 text-base focus:border-black outline-none transition-colors"
+              />
+            </div>
+
+            <button
+              onClick={handleAddItem}
+              className="w-full bg-black text-white py-3 text-xs font-bold uppercase tracking-wider hover:bg-black/80 transition-colors flex items-center justify-center gap-2"
+            >
+              <Send className="w-3.5 h-3.5" />
+              Share
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Profile Modal */}
+      {showProfile && (
+        <div className="fixed inset-0 bg-white z-50 flex flex-col" style={{paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)'}}>
+          <div className="flex items-center justify-between px-4 py-4 border-b border-black/10">
+            <h3 className="text-sm font-bold uppercase tracking-wider">Profile</h3>
+            <button onClick={() => setShowProfile(false)} className="text-black/30 hover:text-black">
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+
+          <div className="flex-1 p-4 overflow-y-auto">
+            <div className="text-center mb-8">
               <img
                 src={currentUser.avatar}
                 alt={currentUser.name}
@@ -523,27 +569,20 @@ export default function App() {
               />
               <h2 className="text-sm font-bold text-black uppercase tracking-wider">{currentUser.name}</h2>
               <p className="text-xs text-black/30 mt-1">{currentUser.email}</p>
-              <button
-                onClick={() => setShowAvatarPicker(!showAvatarPicker)}
-                className="text-xs text-black/40 hover:text-black uppercase tracking-wider mt-3"
-              >
-                {showAvatarPicker ? 'Close' : 'Change avatar'}
-              </button>
             </div>
 
-            {showAvatarPicker && (
-              <div className="border border-black/10 p-4 mb-6">
-                <AvatarPicker
-                  selected={currentUser.avatar}
-                  onSelect={(avatar) => {
-                    updateAvatar(avatar);
-                    setShowAvatarPicker(false);
-                  }}
-                />
+            <div className="grid grid-cols-2 gap-3 mb-6">
+              <div className="border border-black/5 p-4 text-center">
+                <p className="text-2xl font-bold text-black">{userItems.length}</p>
+                <p className="text-xs text-black/30 mt-1 uppercase tracking-wider">Shared</p>
               </div>
-            )}
+              <div className="border border-black/5 p-4 text-center">
+                <p className="text-2xl font-bold text-black">{likedItems.size}</p>
+                <p className="text-xs text-black/30 mt-1 uppercase tracking-wider">Saved</p>
+              </div>
+            </div>
 
-            <div className="border border-black/10 p-4 mb-6">
+            <div className="border border-black/10 p-4">
               <div className="flex items-center justify-between mb-4">
                 <div>
                   <p className="text-xs font-bold text-black uppercase tracking-wider">Invites</p>
@@ -591,136 +630,6 @@ export default function App() {
                   ))}
                 </div>
               )}
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <div className="border border-black/5 p-4 text-center">
-                <p className="text-2xl font-bold text-black">{userItems.length}</p>
-                <p className="text-xs text-black/30 mt-1 uppercase tracking-wider">Shared</p>
-              </div>
-              <div className="border border-black/5 p-4 text-center">
-                <p className="text-2xl font-bold text-black">{likedItems.size}</p>
-                <p className="text-xs text-black/30 mt-1 uppercase tracking-wider">Saved</p>
-              </div>
-            </div>
-          </div>
-        )}
-      </main>
-
-      {/* Fixed Footer */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-black/10 z-50">
-        <div className="max-w-2xl mx-auto flex justify-around items-center px-4 sm:px-6 py-3" style={{paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom))'}}>
-          <button
-            onClick={() => setActiveTab('feed')}
-            className={`flex flex-col items-center gap-1 transition-colors ${activeTab === 'feed' ? 'text-black' : 'text-black/20'}`}
-          >
-            <Home className="w-5 h-5" />
-            <span className="text-xs tracking-wider uppercase">Feed</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab('discover')}
-            className={`flex flex-col items-center gap-1 transition-colors ${activeTab === 'discover' ? 'text-black' : 'text-black/20'}`}
-          >
-            <Compass className="w-5 h-5" />
-            <span className="text-xs tracking-wider uppercase">Discover</span>
-          </button>
-
-          <button
-            onClick={() => setShowAddModal(true)}
-            className="bg-black text-white rounded-full p-3 -mt-6 shadow-lg hover:bg-black/80 transition-colors"
-          >
-            <Plus className="w-5 h-5" />
-          </button>
-
-          <button
-            onClick={() => setActiveTab('saved')}
-            className={`flex flex-col items-center gap-1 transition-colors ${activeTab === 'saved' ? 'text-black' : 'text-black/20'}`}
-          >
-            <Heart className="w-5 h-5" />
-            <span className="text-xs tracking-wider uppercase">Saved</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab('profile')}
-            className={`flex flex-col items-center gap-1 transition-colors ${activeTab === 'profile' ? 'text-black' : 'text-black/20'}`}
-          >
-            <User className="w-5 h-5" />
-            <span className="text-xs tracking-wider uppercase">Profile</span>
-          </button>
-        </div>
-      </nav>
-
-      {showAddModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-end sm:items-center justify-center z-50">
-          <div className="bg-white rounded-t-2xl sm:rounded-lg w-full max-w-lg p-4 sm:p-6 sm:mx-4">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-sm font-bold uppercase tracking-wider">Share a pick</h3>
-              <button onClick={() => setShowAddModal(false)} className="text-black/30 hover:text-black">
-                <Plus className="w-5 h-5 rotate-45" />
-              </button>
-            </div>
-
-            <div className="space-y-4">
-              <div>
-                <label className="block text-xs font-bold text-black mb-2 uppercase tracking-wider">Type</label>
-                <select
-                  value={newItem.type}
-                  onChange={(e) => setNewItem({ ...newItem, type: e.target.value, category: '' })}
-                  className="w-full px-4 py-3 border border-black/20 text-base focus:border-black outline-none transition-colors"
-                >
-                  <option value="music">Music</option>
-                  <option value="book">Book</option>
-                  <option value="tv">TV/Film</option>
-                  <option value="podcast">Podcast</option>
-                  <option value="theatre">Theatre</option>
-                  <option value="exhibition">Exhibition</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-black mb-2 uppercase tracking-wider">Title</label>
-                <input
-                  type="text"
-                  value={newItem.content}
-                  onChange={(e) => setNewItem({ ...newItem, content: e.target.value })}
-                  placeholder="e.g., Blonde - Frank Ocean"
-                  className="w-full px-4 py-3 border border-black/20 text-base focus:border-black outline-none transition-colors"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-black mb-2 uppercase tracking-wider">Category</label>
-                <select
-                  value={newItem.category}
-                  onChange={(e) => setNewItem({ ...newItem, category: e.target.value })}
-                  className="w-full px-4 py-3 border border-black/20 text-base focus:border-black outline-none transition-colors"
-                >
-                  <option value="">Select a category</option>
-                  {(categoryOptions[newItem.type] || []).map((cat) => (
-                    <option key={cat} value={cat}>{cat}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-black mb-2 uppercase tracking-wider">Link <span className="font-normal text-black/30">(optional)</span></label>
-                <input
-                  type="url"
-                  value={newItem.link}
-                  onChange={(e) => setNewItem({ ...newItem, link: e.target.value })}
-                  placeholder="e.g., https://open.spotify.com/..."
-                  className="w-full px-4 py-3 border border-black/20 text-base focus:border-black outline-none transition-colors"
-                />
-              </div>
-
-              <button
-                onClick={handleAddItem}
-                className="w-full bg-black text-white py-3 text-xs font-bold uppercase tracking-wider hover:bg-black/80 transition-colors flex items-center justify-center gap-2"
-              >
-                <Send className="w-3.5 h-3.5" />
-                Share
-              </button>
             </div>
           </div>
         </div>
